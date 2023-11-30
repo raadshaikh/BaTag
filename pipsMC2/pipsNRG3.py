@@ -56,9 +56,9 @@ def hist_of_addition(A, B, bins=10, plot=False):
     return C_edges, C_heights
 
 
-load('pipsMC2_output')
+load('pipsMC3_output')
 
-#we have N, volume, decayDensity, num_successes, efficiency, successes, fielddecays, Normalizer
+#we have N, volume, decayDensity, num_successes, efficiency, successes, fielddecays, Normalizer, po218successes, po214successes
 #Normalizer=4000*volume/(2**22)
 #Normalizer=1
 
@@ -66,9 +66,10 @@ print(f"{N=}")
 print(f"{volume=}", 'mm^3')
 print(f"{decayDensity=}", 'decays per mm^3')
 print(f"{num_successes=}")
-print(f"{efficiency=}", '=', efficiency*100, '%')
 print(f"{fielddecays=}")
 print(f"{Normalizer=}")
+print('po218 non-field successes= ', len(po218successes))
+print('po214 non-field successes= ', len(po214successes))
 #print(f"{successes=}")
 #print(successes[:,0][0]) #first successful decay position as xyz list
 MC_distances=np.array(successes[:,2], dtype=float)*0.1 #converting mm to cm
@@ -110,10 +111,17 @@ MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
 po218s=Po218Q*np.ones(int(fielddecays/2))
 po214s=Po214Q*np.ones(int(fielddecays/2))
 monopoloniums=np.append(po218s,po214s)
-#adding poloniums hanging around in argon (but outside field region), recycling the radon's positions
-MC_distances=MC_distances[np.logical_not(fieldsuccesses)] #only keep the positions outside the field region since we're doing polonium ions now
-Po218s=np.interp(MC_distances, lengths, alpha_energies(Po218Q))
-Po214s=np.interp(MC_distances, lengths, alpha_energies(Po214Q))
+
+#adding poloniums from argon/walls, as found in MC3
+MC_distances_po218=[]
+if(po218successes.size>0):
+    MC_distances_po218=np.array(po218successes[:,2], dtype=float)*0.1
+MC_distances_po214=[]
+if(po214successes.size>0):
+    MC_distances_po214=np.array(po214successes[:,2], dtype=float)*0.1
+
+Po218s=np.interp(MC_distances_po218, lengths, alpha_energies(Po218Q))
+Po214s=np.interp(MC_distances_po214, lengths, alpha_energies(Po214Q))
 poloniums=np.append(Po218s, Po214s)
 poloniums=poloniums[poloniums>0]
 poloniums=np.append(poloniums, monopoloniums)
@@ -133,7 +141,11 @@ sigma=0.475 #MeV. From Americium test
 response=ssig.windows.gaussian(len(MC_energies_detected), sigma)
 convolved=ssig.convolve(MC_energies_detected, response, mode='same')/sum(response)
 
-FDbins = lambda v: int(np.ptp(v)/(2*ss.iqr(v)*len(v)**(-1./3))) #Freedman-Diaconis bins rule
+def FDbins(v):
+    try:
+        return int(np.ptp(v)/(2*ss.iqr(v)*len(v)**(-1./3))) #Freedman-Diaconis bins rule
+    except:
+        return 1
 
 hist_of_addition(MC_energies_detected, np.random.normal(0,sigma,2**22), bins=FDbins(MC_energies_detected), plot=True)
 
@@ -148,4 +160,5 @@ plt.hist(convolved2, bins=FDbins(convolved2), alpha=0.7)'''
 plt.xlabel('energy of alpha particle as it hits detector (MeV)')
 plt.ylabel('abundance')
 plt.legend()'''
+plt.savefig('{}.png'.format('with_sticky'), bbox_inches='tight')
 plt.show()
