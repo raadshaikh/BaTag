@@ -15,6 +15,14 @@ def filter_decays():
     global success_indices
     decayPos=decayPos[success_indices]
     decayDir=decayDir[success_indices]
+def filter_decays_po():
+    global poPos
+    global poDir
+    global Po218mask
+    global success_indices
+    poPos=poPos[success_indices]
+    poDir=poDir[success_indices]
+    Po218mask=Po218mask[success_indices]
 
 def save(filename, *args):
     # Get global dictionary
@@ -52,7 +60,7 @@ volume=xrange*yrange*zrange
 detectR = 9.77 #radius of circular active region on detector. centered at origin, in xy plane.
 alpha_energy_init=5.5904 #MeV. idk, why not just put it in here
 
-N=int(2**18) #number of decays
+N=int(2**20) #number of decays
 #N=int(4000*volume) #24000 Rn/cc, over 1 day, means 4000 decays/cc
 #assert(N<2e4)
 Normalizer=4000*volume/N
@@ -104,7 +112,7 @@ filter_decays()
 successes=[]
 lendecayPos=len(decayPos)
 for i in range(lendecayPos):
-    if i%int(lendecayPos/100)==0: print("{:.0f}%".format(100*i/lendecayPos))
+    print("{:.1f}%".format(100*i/lendecayPos))
     O=np.tile(decayPos[i], (len(my_mesh),1))
     D=np.tile(decayDir[i], (len(my_mesh),1))
     v1=my_mesh[:,0]
@@ -166,7 +174,7 @@ ionDir=ionDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',ionDir,ionDir)), (le
 MFP=112.2e-6 #mean free path for argon at 700mb, in mm
 poVel=180e-3 #polonium ion velocity at room temp, mm/s. works for anything with mass 214u
 dt=MFP/poVel #time between collisions, seconds
-dt=1800
+#dt=1
 Po218L=np.log(2)/(3.05*60) #decay constants, inverse seconds
 Pb214L=np.log(2)/(26.8*60)
 Bi214L=np.log(2)/(19.7*60)
@@ -194,8 +202,7 @@ timesteps=int(24*60*60/dt) #one whole day
 #timesteps=50 #start small i guess
 timesteps=int(3*60*60/dt) #1 hour's simulation took 11 hours
 for j in range(timesteps):
-    #if j%1==0: print('timestep=',j)
-    if j%int(timesteps/timesteps)==0: print("{:.2f}%".format(100*j/timesteps))
+    print("{:.2f}%".format(100*j/timesteps))
     #at beginning of each time step the ion collided with an argon, so give it a new random direction.
     ionDir=np.random.normal(0,1,(lenionPos,3))
     ionDir=ionDir.astype(np.float16)
@@ -205,7 +212,6 @@ for j in range(timesteps):
     coin=np.random.uniform(size=lenionPos)
     coincompare=(Po218L*Po218mask + Pb214L*Pb214mask + Bi214L*Bi214mask + Po214L*Po214mask)*dt
     decaymask=coin<coincompare #list of indices pointing out which ions decay in this time step. based on this, update the species masks
-    print(decaymask.shape, decaymask.sum())
     Po218s=np.append(Po218s, ionPos[np.logical_and(Po218mask, decaymask)]) #jotting down polonium decays
     Po214s=np.append(Po214s, ionPos[np.logical_and(Po214mask, decaymask)])
     #updating species masks:
@@ -220,7 +226,7 @@ for j in range(timesteps):
     #update non-stuck ions' positions and see if they stick:
     ionPosNS=ionPos[~stuck]
     ionDirNS=ionDir[~stuck]
-    #ionPosNS+=ionDirNS*MFP #update position based on direction and mean free path
+    ionPosNS+=ionDirNS*MFP #update position based on direction and mean free path
     xydistsquared=np.power(ionPos[:,0], 2)+np.power(ionPos[:,1], 2)
     outside=np.logical_and.reduce([ionPos[:,2]>41, xydistsquared>564])
     stuck=np.logical_or(stuck, outside)
@@ -256,18 +262,25 @@ for j in range(timesteps):
 
 
 #now to just see which of the accumulated polonium decays hit the detector
-#yes i'm copying and pasting this code yet again. does anyone have a problem with that?
-print(len(Po218s), len(Po214s))
+#yes i'm copying and pasting this code yet again. i hope no one has a problem with that
+print('ions decayed\n',len(Po218s), len(Po214s))
+Po218mask=np.append(np.ones(int(len(Po218s)/3),dtype=bool),np.zeros(int(len(Po214s)/3),dtype=bool))
 poPos=np.append(Po218s, Po214s)
+poPos=np.reshape(poPos, (int(len(poPos)/3),3))
 poDir=np.random.normal(0,1,(len(poPos),3))
 poDir=poDir.astype(np.float16)
 poDir=poDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',poDir,poDir)), (len(poDir),1))
+success_indices=poDir[:,2]<0
+filter_decays_po()
+floor_intersections=poPos - np.divide(np.multiply(poDir, np.reshape(poPos[:,2], (len(poPos),1))), np.reshape(poDir[:,2], (len(poDir),1)))
+success_indices=np.einsum('ij...,ij->i...',floor_intersections,floor_intersections)<95.5 #(squared norm <300/pi)
+filter_decays_po()
 posuccesses=[]
 po218successes=[]
 po214successes=[]
-i_successes=np.array([])
+i_successes=[]
 for i in range(len(poPos)):
-    if i%int(len(poPos)/100)==0: print("{:.0f}%".format(100*i/len(poPos)))
+    print("{:.1f}%".format(100*i/len(poPos)))
     O=np.tile(poPos[i], (len(my_mesh),1))
     D=np.tile(poDir[i], (len(my_mesh),1))
     v1=my_mesh[:,0]
@@ -286,11 +299,13 @@ for i in range(len(poPos)):
     mask2=np.logical_and.reduce([tuv[:,0]>Epsilon, tuv[:,1]>Epsilon, tuv[:,2]>Epsilon, tuv[:,1]<1+Epsilon, tuv[:,1]+tuv[:,2]<1+Epsilon])
     if mask2.sum()==2: #this po decay hits the detector and nothing else, so jot it down somewhere. List of O, D, t
         posuccesses.append([list(O[mask][mask2][0]), list(D[mask][mask2][0]), tuv[mask2][:,0][0]])
-        np.append(i_successes, i)
-print(len(posuccesses))
+        i_successes.append(Po218mask[i])
+Po218mask=np.array(i_successes)
+posuccesses=np.array(posuccesses, dtype='object')
 print('poloniums done')
-Po218mask=i_successes<len(Po218s)
-if i_successes.size>0:
+#print(Po218mask)
+#print(posuccesses)
+if Po218mask.size>0:
     po218successes=posuccesses[Po218mask]
     po214successes=posuccesses[np.logical_not(Po218mask)]
 po218successes=np.array(po218successes, dtype='object')

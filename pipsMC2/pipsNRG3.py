@@ -59,9 +59,9 @@ def hist_of_addition(A, B, bins=10, plot=False):
 load('pipsMC3_output')
 
 #we have N, volume, decayDensity, num_successes, efficiency, successes, fielddecays, Normalizer, po218successes, po214successes
-#Normalizer=4000*volume/(2**22)
 #Normalizer=1
 
+#just checking what we have:
 print(f"{N=}")
 print(f"{volume=}", 'mm^3')
 print(f"{decayDensity=}", 'decays per mm^3')
@@ -74,27 +74,22 @@ print('po214 non-field successes= ', len(po214successes))
 #print(successes[:,0][0]) #first successful decay position as xyz list
 MC_distances=np.array(successes[:,2], dtype=float)*0.1 #converting mm to cm
 
-#finding how many successful decays were in field region, i.e. 5<z<41.25 and sqrt(x**2+y**2)<8.2
-decayPos=np.array(successes[:,0])
-decayPos=np.array([np.array(xi) for xi in decayPos])
-zs=decayPos[:,2]
-rhosquareds=np.power(decayPos[:,0], 2)+np.power(decayPos[:,1], 2)
-fieldsuccesses=np.logical_and.reduce([zs>5, zs<41.25, rhosquareds<67.24])
-print(fieldsuccesses.sum())
-#poloniums that stick to the pips come from everything in the field, not just this! are monoenergetic, and half of them are detected. add them manually
 
-astar=np.loadtxt('apdata.pl.txt')
+
+astar=np.loadtxt('apdata.pl.txt') #data table from ASTAR
 energies=astar[:,0]
 dEdxs=astar[:,1]
 densityAr=0.00115 #g/cc
-dEdxs=densityAr*dEdxs
-lengths=np.linspace(0,13,2**10) #13cm for good measure
+dEdxs=densityAr*dEdxs #normalizing ASTAR stopping powers with density of the medium
+lengths=np.linspace(0,13,2**10) #13cm for good measure, that's about how far Po214s reach
 
 Rn222Q=5.5904 #MeV
 Po218Q=6.1
 Po214Q=7.8
 
-def alpha_energies(init_E):
+#this function gives a list of what energy an alpha with a particular inital energy will have after travelling a certain length.
+#the lengths of interest are just 0 to 13cm with a thousand divisions in between
+def alpha_energies(init_E): 
     dx=lengths[1]-lengths[0]
     alpha_energies=np.zeros(lengths.shape)
     alpha_energies[0]=init_E #MeV
@@ -105,14 +100,15 @@ def alpha_energies(init_E):
         alpha_energies[i]=alpha_energy
     return alpha_energies
 
+#the pipsMC4.py simulation gave a lsit of lengths the alphas had to go through, now we plug these into ASTAR data to get a list of energies the alphas will have when hitting the detector
 MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
 
-#adding poloniums stuck to pips
+#adding poloniums stuck to pips. the gross number is as many radons as initialised in field region, the net number is half of that
 po218s=Po218Q*np.ones(int(fielddecays/2))
 po214s=Po214Q*np.ones(int(fielddecays/2))
 monopoloniums=np.append(po218s,po214s)
 
-#adding poloniums from argon/walls, as found in MC3
+#adding poloniums from ambient, as found in pipsMC4.py
 MC_distances_po218=[]
 if(po218successes.size>0):
     MC_distances_po218=np.array(po218successes[:,2], dtype=float)*0.1
@@ -120,6 +116,7 @@ MC_distances_po214=[]
 if(po214successes.size>0):
     MC_distances_po214=np.array(po214successes[:,2], dtype=float)*0.1
 
+#putting together the poloniums from ambient and from PIPS
 Po218s=np.interp(MC_distances_po218, lengths, alpha_energies(Po218Q))
 Po214s=np.interp(MC_distances_po214, lengths, alpha_energies(Po214Q))
 poloniums=np.append(Po218s, Po214s)
@@ -127,7 +124,6 @@ poloniums=poloniums[poloniums>0]
 poloniums=np.append(poloniums, monopoloniums)
 
 MC_energies_detected=np.append(MC_energies_detected, poloniums)
-#MC_energies_detected=poloniums
 
 #the detector region i cut out is a bit too large, so some particles that would have been exhausted
 #by the time they hit the detector are inadvertently included. cutting them out here with this mask
@@ -141,24 +137,13 @@ sigma=0.475 #MeV. From Americium test
 response=ssig.windows.gaussian(len(MC_energies_detected), sigma)
 convolved=ssig.convolve(MC_energies_detected, response, mode='same')/sum(response)
 
-def FDbins(v):
+def FDbins(v):  #Freedman-Diaconis bins rule
     try:
-        return int(np.ptp(v)/(2*ss.iqr(v)*len(v)**(-1./3))) #Freedman-Diaconis bins rule
+        return int(np.ptp(v)/(2*ss.iqr(v)*len(v)**(-1./3)))
     except:
         return 1
 
 hist_of_addition(MC_energies_detected, np.random.normal(0,sigma,2**22), bins=FDbins(MC_energies_detected), plot=True)
 
-#plt.hist(MC_energies_detected, bins=FDbins(MC_energies_detected), label='simulated data')
-
-'''response2=np.random.normal(0,sigma,len(MC_energies_detected))
-plt.hist(response2, bins=FDbins(response2), alpha=0.7)
-convolved2=np.convolve(MC_energies_detected,response2, mode='full')
-plt.hist(convolved2, bins=FDbins(convolved2), alpha=0.7)'''
-
-'''plt.hist(convolved, bins=FDbins(convolved), color='orange', alpha=0.8, label='convolved with detector response, $\sigma=0.475$ MeV')
-plt.xlabel('energy of alpha particle as it hits detector (MeV)')
-plt.ylabel('abundance')
-plt.legend()'''
-plt.savefig('{}.png'.format('with_sticky'), bbox_inches='tight')
+plt.savefig('{}.png'.format('detected_energies'), bbox_inches='tight')
 plt.show()
