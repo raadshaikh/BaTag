@@ -58,8 +58,8 @@ volume=xrange*yrange*zrange
 detectR = 9.77 #radius of circular active region on detector. centered at origin, in xy plane.
 alpha_energy_init=5.5904 #MeV. idk, why not just put it in here
 
-N=int(2**20) #number of decays
-print('starting with {} radon decays\n'.format(N))
+N=int(2**10) #number of decays
+print('\nstarting with {} radon decays'.format(N))
 #N=int(4000*volume) #24000 Rn/cc, over 1 day, means 4000 decays/cc
 Normalizer=4000*volume/N #This is used to scale the histogram later so it looks like we started out with 4000 decays/cc
 
@@ -110,7 +110,7 @@ filter_decays()
 successes=[]
 lendecayPos=len(decayPos)
 for i in range(lendecayPos):
-    if int(10000*i/lendecayPos)%1==0: print("radons: {:.2f}%".format(100*i/lendecayPos))
+    if int(10000*i/lendecayPos)%1==0: print("radons: {:.2f}%".format(100*i/lendecayPos), end='\r')
     O=np.tile(decayPos[i], (len(my_mesh),1))
     D=np.tile(decayDir[i], (len(my_mesh),1))
     v1=my_mesh[:,0]
@@ -142,7 +142,7 @@ for i in range(lendecayPos):
 successes=np.array(successes, dtype='object')
 #print(successes)
 
-print('radon done\n')
+print('\nradon done\n')
 
 
 '''done with radon decays. move to polonium.'''
@@ -194,7 +194,7 @@ Po214mask=np.zeros(lenionPos, dtype=bool)
 timesteps=int(24*60*60/dt) #one whole day
 timesteps=int(3*60*60/dt) #3 hours, start small
 for j in range(timesteps):
-    if int(10000*j/timesteps)%1==0: print("ion decays: {:.2f}%".format(100*j/timesteps))
+    if int(100*j/timesteps)%1==0: print("\rion decays: {:.0f}%".format(100*j/timesteps), end='\r')
     #for all ions, draw a U(0,1). if this is smaller than lambda*dt, the ion decays.
     coin=np.random.uniform(size=lenionPos)
     coincompare=(Po218L*Po218mask + Pb214L*Pb214mask + Bi214L*Bi214mask + Po214L*Po214mask)*dt
@@ -214,7 +214,7 @@ for j in range(timesteps):
 
 #now to just see which of the accumulated polonium decays hit the detector
 #yes i'm copying and pasting this code yet again. i hope no one has a problem with that
-print('ions decayed\n\nPo218 decays and Po214 decays:',len(Po218s), len(Po214s))
+print('\nions decayed\n')
 Po218mask=np.append(np.ones(int(len(Po218s)/3),dtype=bool),np.zeros(int(len(Po214s)/3),dtype=bool))
 poPos=np.append(Po218s, Po214s)
 poPos=np.reshape(poPos, (int(len(poPos)/3),3))
@@ -232,7 +232,7 @@ po214successes=[]
 i_successes=[]
 lenpoPos=len(poPos)
 for i in range(lenpoPos):
-    if int(10000*i/lenpoPos)%1==0: print("poloniums: {:.2f}%".format(100*i/len(poPos)))
+    if int(10000*i/lenpoPos)%1==0: print("poloniums: {:.2f}%".format(100*i/len(poPos)), end='\r')
     O=np.tile(poPos[i], (len(my_mesh),1))
     D=np.tile(poDir[i], (len(my_mesh),1))
     v1=my_mesh[:,0]
