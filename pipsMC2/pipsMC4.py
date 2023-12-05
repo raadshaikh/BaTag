@@ -254,7 +254,7 @@ for i in range(lenpoPos):
         i_successes.append(Po218mask[i])
 Po218mask=np.array(i_successes)
 posuccesses=np.array(posuccesses, dtype='object')
-print('poloniums done')
+print('\npoloniums done')
 if Po218mask.size>0:
     po218successes=posuccesses[Po218mask]
     po214successes=posuccesses[np.logical_not(Po218mask)]
