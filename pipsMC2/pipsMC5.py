@@ -2,6 +2,7 @@ import numpy as np
 from stl import mesh
 from matplotlib import pyplot as plt
 import pickle
+from scipy.interpolate import interp1d
 
 #utilities
 
@@ -42,10 +43,10 @@ def load(filename):
 
 
 
-# Load the STL files...
-my_mesh = mesh.Mesh.from_file('boil-2-pipsMC.stl')
-my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
+dt=1 #timestep in seconds
+timesteps=int(24*60*60/dt) #one whole day
 
+#geometry
 xmin, xmax = -68.82, 68.82 #bounding box for volume under consideration
 ymin, ymax = -25.42, 25.42
 zmin, zmax = 0.65, 130
@@ -54,12 +55,80 @@ yrange=ymax-ymin
 zrange=zmax-zmin
 volume=xrange*yrange*zrange
 detectR = 9.77 #radius of circular active region on detector. centered at origin, in xy plane.
-alpha_energy_init=5.5904 #MeV. idk, why not just put it in here
 
-N=int(2**22) #number of radon decays
-print('\nstarting with {} radon decays'.format(N))
+
+#interpolate the given data to find out the activity of each species at every point in time
+#these are all single-decay reactions, so just integrate activity of the poloniums to find out how many of their decays there are
+
+times_given=np.array([0,86400,172800,259200,345600,432000,864000])
+
+# A for Activity
+Ra226A=np.array([5000.00000025,4999.994062,4999.988124,4999.982185,4999.976247,4999.970309,4999.940618]) #t=0 value extrapolated
+Rn222A=np.array([0,833.6894579	,1528.370218	,2107.220312	,2589.553113	,2991.46172	,4193.130921])
+Po218A=np.array([0,	831.3278231	,1526.402361	,2105.580574	,2588.186785	,2990.323214	,4192.673588])
+Pb214A=np.array([0,	810.8106227	,1509.306184	,2091.335006	,2576.316521	,2980.4322	,4188.700407])
+Bi214A=np.array([0	,795.5202288	,1496.565299	,2080.718531	,2567.470235	,2973.060946	,4185.739404])
+Po214A=np.array([0	,795.5202267	,1496.565297	,2080.71853	,2567.470234	,2973.060945	,4185.739404])
+Pb210A=np.array([0	,0.033151067	,0.131646674	,0.284703018	,0.483216622	,0.719601905	,2.281773287])
+
+#Aif for Activity interpolation function
+Ra226Aif=interp1d(times_given, Ra226A, kind='cubic')
+Rn222Aif=interp1d(times_given, Rn222A, kind='cubic')
+Po218Aif=interp1d(times_given, Po218A, kind='cubic')
+Pb214Aif=interp1d(times_given, Pb214A, kind='cubic')
+Bi214Aif=interp1d(times_given, Bi214A, kind='cubic')
+Po214Aif=interp1d(times_given, Po214A, kind='cubic')
+Pb210Aif=interp1d(times_given, Pb210A, kind='cubic')
+
+times_smooth=np.arange(0,86400,dt)
+
+#Ai for Activity interpolated
+Ra226Ai=Ra226Aif(times_smooth)
+Rn222Ai=Rn222Aif(times_smooth)
+Po218Ai=Po218Aif(times_smooth)
+Pb214Ai=Pb214Aif(times_smooth)
+Bi214Ai=Bi214Aif(times_smooth)
+Po214Ai=Po214Aif(times_smooth)
+Pb210Ai=Pb210Aif(times_smooth)
+
+'''
+#just checking how good the interpolations are (they're pretty good)
+plt.plot(times_given, Ra226A, 'o', times_smooth, Ra226Ai, '-')
+plt.plot(times_given, Rn222A, 'o', times_smooth, Rn222Ai, '-')
+plt.plot(times_given, Po218A, 'o', times_smooth, Po218Ai, '-')
+plt.plot(times_given, Pb214A, 'o', times_smooth, Pb214Ai, '-')
+plt.plot(times_given, Bi214A, 'o', times_smooth, Bi214Ai, '-')
+plt.plot(times_given, Po214A, 'o', times_smooth, Po214Ai, '-')
+plt.plot(times_given, Pb210A, 'o', times_smooth, Pb210Ai, '-')
+plt.show()'''
+
+#AiI for Activity interpolated Integrated
+
+Ra226AiI=Ra226Ai.sum()*dt
+Rn222AiI=Rn222Ai.sum()*dt
+Po218AiI=Po218Ai.sum()*dt
+Pb214AiI=Po218Ai.sum()*dt
+Bi214AiI=Bi214Ai.sum()*dt
+Po214AiI=Po214Ai.sum()*dt
+Pb210AiI=Pb210Ai.sum()*dt
+
+#these are just the old variable names I was using.
+#dividing by total volume to get density, then multiplying by my bounding box to get how many decays to consider
+total_volume= 60e6 #in mm^3
+N=int(volume*Rn222AiI/total_volume)
+Po218s=int(Po218AiI*volume/total_volume)
+Po214s=int(Po214AiI*volume/total_volume)
+
+print('decay calculations done\n')
+
+'''start the radon hitting'''
+# Load the STL files...
+my_mesh = mesh.Mesh.from_file('boil-2-pipsMC.stl')
+my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
+
+print('starting with {} radon decays'.format(N))
 #N=int(4000*volume) #24000 Rn/cc, over 1 day, means 4000 decays/cc
-Normalizer=4000*volume/N #This is used to scale the histogram later so it looks like we started out with 4000 decays/cc
+Normalizer=1 #This is used to scale the histogram later. In this file we start with the 'real' number of decays so no need for this
 
 #generate random positions and direction rays for each decay.
 #N rows, 3 columns. each row identifies a decay, and there is a column for each coordinate
@@ -137,57 +206,10 @@ for i in range(lendecayPos):
 successes=np.array(successes, dtype='object')
 #print(successes)
 
-print('\nradon done\n')
+print('\nradon done\nstarting with {}, {} Po218s, Po214s\n'.format(Po218s, Po214s)')
 
 
 '''done with radon decays. move to polonium.'''
-
-#MFP=112.2e-6 #mean free path for argon at 700mb, in mm
-#poVel=180e-3 #polonium ion velocity at room temp, mm/s. works for anything with mass 214u
-#dt=MFP/poVel #time between collisions, seconds. do we need it this fine?
-dt=1 #timestep in seconds
-#timesteps=int(24*60*60/dt) #one whole day
-timesteps=int(3*60*60/dt) #3 hours, start small
-Po218L=np.log(2)/(3.05*60) #decay constants, inverse seconds
-Pb214L=np.log(2)/(26.8*60)
-Bi214L=np.log(2)/(19.7*60)
-Po214L=np.log(2)/(0.16e-3)
-
-#need to keep track of ion position, species
-#iterate over many short time periods. at start of the time period, flip a coin for each ion and decay it or not based on species
-#if a polonium decays, add it to a list so we know where the alpha is coming from
-#once 24hrs have passed, we have a list of ion decay positions corresponding to poloniums and the iteration is over.
-#now generate random directions for these decays and check if they hit detector or not
-
-Po218s=0
-Po214s=0
-stuck=np.zeros(N, dtype=bool)
-Po218mask=np.ones(N, dtype=bool)
-Pb214mask=np.zeros(N, dtype=bool)
-Bi214mask=np.zeros(N, dtype=bool)
-Po214mask=np.zeros(N, dtype=bool)
-
-#once you're done figuring out what happens in each time period, indent all of it and add a for loop over time right here.
-#ignore that comment, i already did it
-for j in range(timesteps):
-    if int(100*j/timesteps)%1==0: print("\rion decays: {:.2f}%".format(100*j/timesteps), end='\r')
-    #for all ions, draw a U(0,1). if this is smaller than lambda*dt, the ion decays.
-    coin=np.random.uniform(size=N)
-    coincompare=(Po218L*Po218mask + Pb214L*Pb214mask + Bi214L*Bi214mask + Po214L*Po214mask)*dt
-    decaymask=coin<coincompare #list of indices pointing out which ions decay in this time step. based on this, update the species masks
-    Po218s+=np.logical_and(Po218mask, decaymask).sum() #jotting down polonium decays
-    Po214s+=np.logical_and(Po214mask, decaymask).sum()
-    #updating species masks:
-    Po214mask=np.logical_and(Po214mask, np.logical_not(decaymask))#removing Po214s that decay
-    Po214mask=np.logical_or(Po214mask, np.logical_and(Bi214mask, decaymask))#adding to Po214s the decays from Bi214
-    Bi214mask=np.logical_and(Bi214mask, np.logical_not(decaymask))
-    Bi214mask=np.logical_or(Bi214mask, np.logical_and(Pb214mask, decaymask))
-    Pb214mask=np.logical_and(Pb214mask, np.logical_not(decaymask))
-    Pb214mask=np.logical_or(Pb214mask, np.logical_and(Po218mask, decaymask))
-    Po218mask=np.logical_and(Po218mask, np.logical_not(decaymask))    
-    #end the time loop. we have accumulated a bunch of polonium decays while also letting ions stick when they hit a wall.
-
-print('\nions decayed\nstarting with {}, {} Po218s, Po214s\n'.format(Po218s, Po214s))
 
 #now to just see which of the accumulated polonium decays hit the detector
 #yes i'm copying and pasting this code yet again. i hope no one has a problem with that
@@ -261,5 +283,5 @@ decayDensity=N/volume
 num_successes=len(successes)
 efficiency=num_successes/N
 #output N, volume, decayDensity, num_successes, efficiency, successes
-save('pipsMC4_output', 'N', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'successes', 'fielddecays', 'Normalizer', 'po218successes', 'po214successes')
+save('pipsMC5_output', 'N', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'successes', 'fielddecays', 'Normalizer', 'po218successes', 'po214successes')
 #load('pipsMC2_output')
