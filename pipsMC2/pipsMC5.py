@@ -206,7 +206,7 @@ for i in range(lendecayPos):
 successes=np.array(successes, dtype='object')
 #print(successes)
 
-print('\nradon done\nstarting with {}, {} Po218s, Po214s\n'.format(Po218s, Po214s)')
+print('\nradon done\nstarting with {}, {} Po218s, Po214s\n'.format(Po218s, Po214s))
 
 
 '''done with radon decays. move to polonium.'''
@@ -272,8 +272,10 @@ for i in range(lenpoPos):
 
 posuccesses=np.array(posuccesses, dtype='object')
 print('\npoloniums done')
-po218successes=posuccesses[:Po218s]
-po214successes=posuccesses[-Po214s:]
+Po218f=int(len(posuccesses)*Po218s/(Po218s+Po214s))
+Po214f=int(len(posuccesses)*Po214s/(Po218s+Po214s))
+po218successes=posuccesses[:Po218f]
+po214successes=posuccesses[-Po214f:]
 po218successes=np.array(po218successes, dtype='object')
 po214successes=np.array(po214successes, dtype='object')
 

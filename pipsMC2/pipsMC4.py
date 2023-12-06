@@ -56,7 +56,7 @@ volume=xrange*yrange*zrange
 detectR = 9.77 #radius of circular active region on detector. centered at origin, in xy plane.
 alpha_energy_init=5.5904 #MeV. idk, why not just put it in here
 
-N=int(2**22) #number of radon decays
+N=int(2**21) #number of radon decays
 print('\nstarting with {} radon decays'.format(N))
 #N=int(4000*volume) #24000 Rn/cc, over 1 day, means 4000 decays/cc
 Normalizer=4000*volume/N #This is used to scale the histogram later so it looks like we started out with 4000 decays/cc
@@ -250,8 +250,10 @@ for i in range(lenpoPos):
 
 posuccesses=np.array(posuccesses, dtype='object')
 print('\npoloniums done')
-po218successes=posuccesses[:Po218s]
-po214successes=posuccesses[-Po214s:]
+Po218f=int(len(posuccesses)*Po218s/(Po218s+Po214s))
+Po214f=int(len(posuccesses)*Po214s/(Po218s+Po214s))
+po218successes=posuccesses[:Po218f]
+po214successes=posuccesses[-Po214f:]
 po218successes=np.array(po218successes, dtype='object')
 po214successes=np.array(po214successes, dtype='object')
 
