@@ -56,7 +56,7 @@ def hist_of_addition(A, B, bins=10, plot=False):
     return C_edges, C_heights
 
 version=4
-load('pipsMC{}_output_temp'.format(version))
+load('pipsMC{}_output'.format(version))
 
 #we have N, volume, decayDensity, num_successes, efficiency, successes, fielddecays, Normalizer, po218successes, po214successes
 #Normalizer=1
@@ -145,5 +145,5 @@ def FDbins(v):  #Freedman-Diaconis bins rule
 
 hist_of_addition(MC_energies_detected, np.random.normal(0,sigma,2**22), bins=FDbins(MC_energies_detected), plot=True)
 
-#plt.savefig('{}_detectedenergies.png'.format(version), bbox_inches='tight')
+plt.savefig('{}_detectedenergies.png'.format(version), bbox_inches='tight')
 plt.show()
