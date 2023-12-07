@@ -145,9 +145,9 @@ print('\nradon done\n')
 #MFP=112.2e-6 #mean free path for argon at 700mb, in mm
 #poVel=180e-3 #polonium ion velocity at room temp, mm/s. works for anything with mass 214u
 #dt=MFP/poVel #time between collisions, seconds. do we need it this fine?
-dt=1 #timestep in seconds
-#timesteps=int(24*60*60/dt) #one whole day
-timesteps=int(3*60*60/dt) #3 hours, start small
+dt=2 #timestep in seconds
+timesteps=int(24*60*60/dt) #one whole day
+#timesteps=int(3*60*60/dt) #3 hours, start small
 Po218L=np.log(2)/(3.05*60) #decay constants, inverse seconds
 Pb214L=np.log(2)/(26.8*60)
 Bi214L=np.log(2)/(19.7*60)
@@ -161,7 +161,6 @@ Po214L=np.log(2)/(0.16e-3)
 
 Po218s=0
 Po214s=0
-stuck=np.zeros(N, dtype=bool)
 Po218mask=np.ones(N, dtype=bool)
 Pb214mask=np.zeros(N, dtype=bool)
 Bi214mask=np.zeros(N, dtype=bool)
@@ -185,7 +184,7 @@ for j in range(timesteps):
     Pb214mask=np.logical_and(Pb214mask, np.logical_not(decaymask))
     Pb214mask=np.logical_or(Pb214mask, np.logical_and(Po218mask, decaymask))
     Po218mask=np.logical_and(Po218mask, np.logical_not(decaymask))    
-    #end the time loop. we have accumulated a bunch of polonium decays while also letting ions stick when they hit a wall.
+    #end the time loop. we have accumulated a bunch of polonium decays
 
 print('\nions decayed\nstarting with {}, {} Po218s, Po214s\n'.format(Po218s, Po214s))
 

@@ -55,7 +55,7 @@ def hist_of_addition(A, B, bins=10, plot=False):
         plt.title('convolved')
     return C_edges, C_heights
 
-version=4
+version=5
 load('pipsMC{}_output'.format(version))
 
 #we have N, volume, decayDensity, num_successes, efficiency, successes, fielddecays, Normalizer, po218successes, po214successes
