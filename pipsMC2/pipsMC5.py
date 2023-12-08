@@ -143,7 +143,7 @@ filter_decays()
 
 zs=decayPos[:,2]
 rhosquareds=np.power(decayPos[:,0], 2)+np.power(decayPos[:,1], 2)
-fielddecaymask=np.logical_and.reduce([zs>5, zs<41.25, rhosquareds<67.24])
+fielddecaymask=np.logical_and.reduce([zs<41.25, rhosquareds<67.24])
 fielddecays=fielddecaymask.sum()
 
 decayDir=decayDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',decayDir,decayDir)), (len(decayDir),1))

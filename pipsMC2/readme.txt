@@ -4,10 +4,10 @@ It outputs a file (pipsMC#_output) that contains a list of positions and distanc
 pipsMC2 has only radon
 pipsMC3 adds poloniums but using the slow, random decay thing and attempts to simulate ions sticking to walls (very slow)
 pipsMC4 ignores the wall sticking but still uses the random decay
-I will use the calculated activities to speed up the simulation in pipsMC5.
+I will use the calculated activities to speed up the simulation in pipsMC5. (done)
 
 pipsNRG#.py (use the latest) reads the previously mentioned output file, computes energies based on stopping power, and generates a plot of the expected energy spectrum histogram.
 
 
-So basically run pipsMC4.py and then pipsNRG3.py.
+So basically run pipsMC5.py and then pipsNRG3.py.
 Before running pipsMC you may want to adjust the variables N, dt, timesteps.
