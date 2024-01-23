@@ -44,7 +44,7 @@ def load(filename):
 
 
 dt=1 #timestep in seconds
-timesteps=int(24*60*60/dt) #one whole day
+timesteps=int(0.8*24*60*60/dt)
 
 #geometry
 xmin, xmax = -68.82, 68.82 #bounding box for volume under consideration
@@ -80,7 +80,7 @@ Bi214Aif=interp1d(times_given, Bi214A, kind='cubic')
 Po214Aif=interp1d(times_given, Po214A, kind='cubic')
 Pb210Aif=interp1d(times_given, Pb210A, kind='cubic')
 
-times_smooth=np.arange(0,86400,dt)
+times_smooth=np.arange(0,timesteps,dt)
 
 #Ai for Activity interpolated
 Ra226Ai=Ra226Aif(times_smooth)
@@ -285,5 +285,5 @@ decayDensity=N/volume
 num_successes=len(successes)
 efficiency=num_successes/N
 #output N, volume, decayDensity, num_successes, efficiency, successes
-save('pipsMC5_output', 'N', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'successes', 'fielddecays', 'Normalizer', 'po218successes', 'po214successes')
+save('pipsMC5_output_{}'.format(timesteps), 'N', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'successes', 'fielddecays', 'Normalizer', 'po218successes', 'po214successes')
 #load('pipsMC2_output')
