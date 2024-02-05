@@ -55,10 +55,9 @@ def hist_of_addition(A, B, bins=10, plot=False):
         plt.title('convolved')
     return C_edges, C_heights
 
-version=5
-dt=1
-timesteps=int(0.8*24*60*60/dt)
-load('pipsMC{}_output_{}'.format(version,timesteps))
+'''
+N, M = 0, 0
+load('scintMC2_output_{}'.format(N,M))
 
 #we have N, volume, decayDensity, num_successes, efficiency, successes, fielddecays, Normalizer, po218successes, po214successes
 #Normalizer=1
@@ -75,7 +74,7 @@ print('po214 non-field successes= ', len(po214successes))
 #print(f"{successes=}")
 #print(successes[:,0][0]) #first successful decay position as xyz list
 MC_distances=np.array(successes[:,2], dtype=float)*0.1 #converting mm to cm
-
+'''
 
 
 astar=np.loadtxt('apdata.pl.txt') #data table from ASTAR
@@ -83,14 +82,14 @@ energies=astar[:,0]
 dEdxs=astar[:,1]
 densityAr=0.00115 #g/cc
 dEdxs=densityAr*dEdxs #normalizing ASTAR stopping powers with density of the medium
-lengths=np.linspace(0,13,2**10) #13cm for good measure, that's about how far Po214s reach
+lengths=np.linspace(0,8,2**14) #8cm, that's about how far the Rn's alpha reaches
 
 Rn222Q=5.5904 #MeV
 Po218Q=6.1
 Po214Q=7.8
 
-#this function gives a list of what energy an alpha with a particular inital energy will have after travelling a certain length.
-#the lengths of interest are just 0 to 13cm with a thousand divisions in between
+#this function gives a list of what energy an alpha with a particular inital energy will have after travelling certain lengths.
+#the lengths of interest are just 0 to 8cm with a thousand divisions in between
 def alpha_energies(init_E): 
     dx=lengths[1]-lengths[0]
     alpha_energies=np.zeros(lengths.shape)
@@ -102,9 +101,30 @@ def alpha_energies(init_E):
         alpha_energies[i]=alpha_energy
     return alpha_energies
 
-#the pipsMC4.py simulation gave a lsit of lengths the alphas had to go through, now we plug these into ASTAR data to get a list of energies the alphas will have when hitting the detector
-MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
+#the pipsMC4.py simulation gave a list of lengths the alphas had to go through, now we plug these into ASTAR data to get a list of energies the alphas will have when hitting the detector
 
+#the above is the old description. for now i only have one artificial decay coming from the middle of the pips going straight up
+#want to find out how much energy is deposited in each little section of its travel
+#so i'll pretend there's a thousand alphas with same initE, decayPos, and decayDir, and all of them travel slightly different lengths
+#then i make a new vector from the differences of adjacent elements in this list
+#basically the energy deposited between 2cm and 2.1cm is the difference between the energy left after 2cm and the energy left after 2.1cm
+
+#MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
+energies=alpha_energies(Rn222Q)
+lengths=lengths[energies>0]   #
+energies=energies[energies>0] #8cm is a little too long, so there could be some unphysical negatives in here to get rid of
+energies=energies[:-1]-energies[1:] #finding difference of adjacent elements in the energy list (differentiating the cumulative energy loss)
+lengths=lengths[:-1] #so now energies[0] means energy lost between lengths[0] and lengths[0]+dx
+dx=lengths[1]-lengths[0]
+'''print(energies)
+print(lengths)
+print(energies/np.min(energies))
+print(np.rint(energies/np.min(energies)))'''
+print(np.sum(np.rint(energies/np.min(energies))))
+save('scintNRG_output', 'energies', 'lengths', 'dx')
+
+
+'''
 #adding poloniums stuck to pips. the gross number is as many radons as initialised in field region, the net number is half of that
 po218s=Po218Q*np.ones(int(fielddecays/2))
 po214s=Po214Q*np.ones(int(fielddecays/2))
@@ -149,3 +169,4 @@ hist_of_addition(MC_energies_detected, np.random.normal(0,sigma,2**22), bins=FDb
 
 plt.savefig('{}_detectedenergies_{}.png'.format(version,timesteps), bbox_inches='tight')
 plt.show()
+'''

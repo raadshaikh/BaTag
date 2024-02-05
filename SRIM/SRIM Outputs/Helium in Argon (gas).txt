@@ -1,6 +1,6 @@
  ==================================================================
               SRIM version ---> SRIM-2013.00
-              Calc. date   ---> December 07, 2023 
+              Calc. date   ---> February 04, 2024 
  ==================================================================
 
  Disk File Name = SRIM Outputs\Helium in Argon (gas).txt

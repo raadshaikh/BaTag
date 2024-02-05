@@ -117,7 +117,7 @@ print('decay calculations done\n')'''
 my_mesh = mesh.Mesh.from_file('detector_chamber4_cut.stl')
 my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
 
-N=int(500) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
+N=int(20) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
 print('starting with {} radon decays'.format(N))
 
 #generate random positions and direction rays for each photon.
@@ -126,20 +126,13 @@ print('starting with {} radon decays'.format(N))
 #i don't want to bother renaming everything, so i'll keep the names 'decaypos' and 'decaydir'.
 #but now, 'decaypos' has M copies of each of the N decay positions
 #although 'decaydir' is still just N*M different random direction cosines since each photon has a different direction regardless of decay
-M=1
-#sipmeff=0.5 IMPORTANT manually reduce the efficiency by this much later
+M=50
+sipmeff=0.5
+M=int(sipmeff*M) #half will be lost to sipm efficiency, might as well do that here itself
 print('each producing {} photons, so total {} photons'.format(M, N*M))
-#decayPos=np.random.uniform([xmin, ymin, zmin], [xmax, ymax, zmax], (N,3))
-#decayPos=np.repeat(decayPos, M, axis=0)
-
-#this is the one artificial decay from the pips going straight up case
-load('scintNRG_output')
-positions=lengths+dx/2
-weights=np.int_(np.rint(energies/np.min(energies)))
-decayPosZ=np.repeat(positions, weights)
-decayPos=np.zeros((len(decayPosZ),3))
-decayPos[:,2]=decayPosZ
-decayDir=np.random.normal(0,1,(len(decayPos),3))
+decayPos=np.random.uniform([xmin, ymin, zmin], [xmax, ymax, zmax], (N,3))
+decayPos=np.repeat(decayPos, M, axis=0)
+decayDir=np.random.normal(0,1,(N*M,3))
 
 zs=decayPos[:,2]
 rhosquareds=np.power(decayPos[:,0], 2)+np.power(decayPos[:,1], 2)
@@ -208,60 +201,10 @@ print('\nteflon cylinder check done \n\nstarting with {} blue photons'.format(le
 
 
 
-'''done with teflon cylinder. move to sipm.'''
-
-#don't want to rename everything, so 'poPos' and 'poDir' represent blue photons from the tpb trying to go to the sipm.
-
-#each incident photon produces some number of wavelength-shifted photons, determined by photoluminescence quantum yield (plqy)
-#generate random directions for each blue photon
-#N rows, 3 columns. each row identifies an ion, and there is a column for each coordinate
-#plqy=0.6 IMPORTANT manually reduce the efficiency at the end by this much
-poPos=intersections
-poDir=np.random.normal(0,1,(len(poPos),3))
-poDir=poDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',poDir,poDir)), (len(poDir),1))
-
-#find solid angle of feasability. sipm is a 6x6mm square, normal to x-axis, centred at (21, 0 12)
-yp=(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
-zp=(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
-success_indices=np.logical_and.reduce([yp>-3, yp<3, zp>9, zp<15])
-filter_decays_po()
-
-#i cut the sipms out of the model, so we'll pass the feasible photons that don't intersect with anything
-lenpoPos=len(poPos)
-success_indices=np.zeros(lenpoPos, dtype='bool')
-for i in range(lenpoPos):
-    if int(10000*i/lenpoPos)%1==0: print("blue photons: {:.2f}%".format(100*i/lenpoPos), end='\r')
-    O=np.tile(poPos[i], (len(my_mesh),1))
-    D=np.tile(poDir[i], (len(my_mesh),1))
-    v1=my_mesh[:,0]
-    v2=my_mesh[:,1]
-    v3=my_mesh[:,2]
-    #first check what triangles are parallel to the ray and exclude them from further calculations
-    normals_dcs_dot=np.einsum('ij...,ij->i...',np.cross(v2-v1, v3-v1),D)
-    mask=np.logical_or(normals_dcs_dot<-Epsilon, normals_dcs_dot>Epsilon)
-    
-    #Moeller-Trumbore
-    MTmatrix=np.array([-D[mask].T, (v2-v1)[mask].T,(v3-v1)[mask].T]).T
-    MTvector=O[mask]-v1[mask]
-    #this gives us intersection of ray with the plane of the triangle:
-    tuv=np.linalg.solve(MTmatrix, MTvector)
-    #now to see if the intersection is actually within the triangle, and exclude if not
-    mask2=np.logical_and.reduce([tuv[:,0]>Epsilon, tuv[:,1]>Epsilon, tuv[:,2]>Epsilon, tuv[:,1]<1+Epsilon, tuv[:,1]+tuv[:,2]<1+Epsilon])
-    if mask2.sum()==0: #this photon hits the detector and nothing else, so keep it
-        success_indices[i]=True
-
-filter_decays_po()
-
-print('\nblue photons done')
-
-
 '''saving stuff'''
 decayDensity=N/volume
-num_successes=len(poPos)
-efficiency=num_successes/(N*M)
-#output N, M, volume, decayDensity, num_successes, efficiency, successes
-save('scintMC_output_weird_{}x{}'.format(N,M), 'N', 'M', 'volume', 'decayDensity', 'num_successes', 'efficiency')
-#load('pipsMC2_output')
+#output the variables to save
+save('scintMC2_output_{}'.format(N), 'N', 'volume', 'decayDensity', )
 
 print('{} photons detected.'.format(num_successes))
 print('efficiency: {}/{} = {}'.format(num_successes,N*M,efficiency))
