@@ -117,7 +117,7 @@ print('decay calculations done\n')'''
 my_mesh = mesh.Mesh.from_file('detector_chamber4_cut.stl')
 my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
 
-N=int(500) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
+N=int(300000) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
 print('starting with {} radon decays'.format(N))
 
 #generate random positions and direction rays for each photon.
@@ -129,16 +129,23 @@ print('starting with {} radon decays'.format(N))
 M=1
 #sipmeff=0.5 IMPORTANT manually reduce the efficiency by this much later
 print('each producing {} photons, so total {} photons'.format(M, N*M))
-#decayPos=np.random.uniform([xmin, ymin, zmin], [xmax, ymax, zmax], (N,3))
-#decayPos=np.repeat(decayPos, M, axis=0)
 
-#this is the one artificial decay from the pips going straight up case
-load('scintNRG_output')
-positions=lengths+dx/2
-weights=np.int_(np.rint(energies/np.min(energies)))
-decayPosZ=np.repeat(positions, weights)
-decayPos=np.zeros((len(decayPosZ),3))
-decayPos[:,2]=decayPosZ
+option=1 
+#2 kinds of simulations: start with uniformly populated uv photons or start with the photons produced by the one radon decay
+
+if option==1:
+    decayPos=np.random.uniform([xmin, ymin, zmin], [xmax, ymax, zmax], (N,3))
+    decayPos=np.repeat(decayPos, M, axis=0)
+elif option==2:
+    #this is the one artificial decay from the pips going straight up case
+    load('scintNRG_output_2^15.5')
+    positions=lengths+dx/2
+    weights=np.int_(np.rint(energies/np.min(energies)))
+    decayPosZ=np.repeat(positions, weights)
+    decayPos=np.zeros((len(decayPosZ),3))
+    decayPos[:,2]=decayPosZ
+
+
 decayDir=np.random.normal(0,1,(len(decayPos),3))
 
 zs=decayPos[:,2]
@@ -260,7 +267,7 @@ decayDensity=N/volume
 num_successes=len(poPos)
 efficiency=num_successes/(N*M)
 #output N, M, volume, decayDensity, num_successes, efficiency, successes
-save('scintMC_output_weird_{}x{}'.format(N,M), 'N', 'M', 'volume', 'decayDensity', 'num_successes', 'efficiency')
+save('scintMC_output{}_{}x{}'.format(option,N,M), 'N', 'M', 'volume', 'decayDensity', 'num_successes', 'efficiency')
 #load('pipsMC2_output')
 
 print('{} photons detected.'.format(num_successes))

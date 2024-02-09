@@ -82,7 +82,8 @@ energies=astar[:,0]
 dEdxs=astar[:,1]
 densityAr=0.00115 #g/cc
 dEdxs=densityAr*dEdxs #normalizing ASTAR stopping powers with density of the medium
-lengths=np.linspace(0,8,2**14) #8cm, that's about how far the Rn's alpha reaches
+big=16 #how finly the path is chopped up (stupid name i know)
+lengths=np.linspace(0,7,int(2**big)) #7cm, that's about how far the Rn's alpha reaches (bit more actually)
 
 Rn222Q=5.5904 #MeV
 Po218Q=6.1
@@ -121,7 +122,7 @@ print(lengths)
 print(energies/np.min(energies))
 print(np.rint(energies/np.min(energies)))'''
 print(np.sum(np.rint(energies/np.min(energies))))
-save('scintNRG_output', 'energies', 'lengths', 'dx')
+save('scintNRG_output_{}'.format(big), 'energies', 'lengths', 'dx')
 
 
 '''
