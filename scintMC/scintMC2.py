@@ -114,10 +114,22 @@ print('decay calculations done\n')'''
 
 '''start the radon hitting'''
 # Load the STL files...
-my_mesh = mesh.Mesh.from_file('detector_chamber4_cut.stl')
+stlname='detector_chamber4_cut.stl'
+my_mesh = mesh.Mesh.from_file(stlname)
 my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
 
-N=int(420000) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
+#geometry
+if stlname=='detector_chamber4_cut.stl':
+    cylinder_zmin, cylinder_zmax = 2, 22
+    detectZ = 12
+elif stlname=='detector_chamber4_cut_shift.stl':
+    cylinder_zmin, cylinder_zmax = 44, 64
+    detectZ = 54
+elif stlname=='detector_chamber4_cut_shift_long.stl':
+    cylinder_zmin, cylinder_zmax = 2, 64
+    detectZ = 54
+
+N=int(4) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
 print('starting with {} radon decays'.format(N))
 
 #generate random positions and direction rays for each photon.
@@ -139,9 +151,10 @@ if option==1:
     decayPos=np.repeat(decayPos, M, axis=0)
 elif option==2:
     #this is the one artificial decay from the pips going straight up case
-    big=16
+    big=15
     load('scintNRG_output_{}'.format(big))
-    print('actually starting with ', np.sum(np.rint(energies/np.min(energies))), 'photons')
+    N=np.sum(np.rint(energies/np.min(energies)))
+    print('actually starting with ', N, 'photons')
     positions=lengths+dx/2
     weights=np.int_(np.rint(energies/np.min(energies)))
     decayPosZ=np.repeat(positions, weights)
@@ -167,7 +180,7 @@ b=2*(decayPos[:,0]*decayDir[:,0] + decayPos[:,1]*decayDir[:,1])
 c=np.power(decayPos[:,0], 2)+np.power(decayPos[:,1], 2)-cylinderR**2
 t1=(-b+np.power(np.power(b,2)-4*a*c, 0.5))/(2*a)
 cylinder_intersect_z=decayPos[:,2]+t1*decayDir[:,2]
-success_indices=np.logical_and(cylinder_intersect_z>2, cylinder_intersect_z<64)
+success_indices=np.logical_and(cylinder_intersect_z>cylinder_zmin, cylinder_intersect_z<cylinder_zmax)
 filter_decays()
 
 #use ray-casting algorithm
@@ -183,7 +196,7 @@ filter_decays()
 
 lendecayPos=len(decayPos)
 success_indices=np.zeros(lendecayPos, dtype='bool')
-intersections=[]
+teflon_intersections=[]
 for i in range(lendecayPos):
     if int(10000*i/lendecayPos)%1==0: print("uv photons: {:.2f}%".format(100*i/lendecayPos), end='\r')
     O=np.tile(decayPos[i], (len(my_mesh),1))
@@ -208,10 +221,10 @@ for i in range(lendecayPos):
     try:
         if np.min(tuv[mask2][:,0]) < t1[i]+Epsilon or np.min(tuv[mask2][:,0]) > t1[i]-Epsilon: #is the closest intersection on the cylinder inner surface?
             success_indices[i]=True
-            intersections.append(list(O[0]+t1[i]*D[0])) #O+tD
+            teflon_intersections.append(list(O[0]+t1[i]*D[0])) #O+tD
     except ValueError:
         pass
-intersections=np.array(intersections)
+teflon_intersections=np.array(teflon_intersections)
 filter_decays()
 
 print('\nteflon cylinder check done \n\nstarting with {} blue photons'.format(len(decayPos)))
@@ -226,19 +239,20 @@ teflon_hits=len(decayPos)
 #generate random directions for each blue photon
 #N rows, 3 columns. each row identifies an ion, and there is a column for each coordinate
 #plqy=0.6 IMPORTANT manually reduce the efficiency at the end by this much
-poPos=intersections
+poPos=teflon_intersections.copy()
 poDir=np.random.normal(0,1,(len(poPos),3))
 poDir=poDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',poDir,poDir)), (len(poDir),1))
 
 #find solid angle of feasability. sipm is a 6x6mm square, normal to x-axis, centred at (21, 0 54)
 yp=(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
 zp=(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
-success_indices=np.logical_and.reduce([yp>-3, yp<3, zp>51, zp<57])
+success_indices=np.logical_and.reduce([yp>-detectR/2, yp<detectR/2, zp>detectZ-(detectR/2), zp<detectZ+(detectR/2)])
 filter_decays_po()
 
 #i cut the sipms out of the model, so we'll pass the feasible photons that don't intersect with anything
 lenpoPos=len(poPos)
 success_indices=np.zeros(lenpoPos, dtype='bool')
+sipm_intersections=[]
 for i in range(lenpoPos):
     if int(10000*i/lenpoPos)%1==0: print("blue photons: {:.2f}%".format(100*i/lenpoPos), end='\r')
     O=np.tile(poPos[i], (len(my_mesh),1))
@@ -259,7 +273,9 @@ for i in range(lenpoPos):
     mask2=np.logical_and.reduce([tuv[:,0]>Epsilon, tuv[:,1]>Epsilon, tuv[:,2]>Epsilon, tuv[:,1]<1+Epsilon, tuv[:,1]+tuv[:,2]<1+Epsilon])
     if mask2.sum()==0: #this photon hits the detector and nothing else, so keep it
         success_indices[i]=True
+        sipm_intersections.append(list(O[0]+t1[i]*D[0])) #O+tD
 
+sipm_intersections=np.array(sipm_intersections)
 filter_decays_po()
 
 print('\nblue photons done')
@@ -269,8 +285,8 @@ print('\nblue photons done')
 decayDensity=N/volume
 num_successes=len(poPos)
 efficiency=num_successes/(N*M)
-#output N, M, volume, decayDensity, num_successes, efficiency, successes
-save('scintMC_output{}_{}x{}'.format(option,N,M), 'N', 'M', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'teflon_hits')
+#save variables you need
+save('scintMC_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M), 'N', 'M', 'volume', 'num_successes', 'teflon_hits', 'decayPos', 'teflon_intersections', 'poPos', 'sipm_intersections')
 #load('pipsMC2_output')
 
 print('{} photons detected.'.format(num_successes))
