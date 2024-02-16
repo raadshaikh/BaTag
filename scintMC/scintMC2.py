@@ -114,7 +114,7 @@ print('decay calculations done\n')'''
 
 '''start the radon hitting'''
 # Load the STL files...
-stlname='detector_chamber4_cut.stl'
+stlname='detector_chamber4_cut_shift_long.stl'
 my_mesh = mesh.Mesh.from_file(stlname)
 my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
 
@@ -151,11 +151,12 @@ if option==1:
     decayPos=np.repeat(decayPos, M, axis=0)
 elif option==2:
     #this is the one artificial decay from the pips going straight up case
-    big=15
+    big=16
     load('scintNRG_output_{}'.format(big))
-    N=np.sum(np.rint(energies/np.min(energies)))
+    N=int(np.sum(np.rint(energies/np.min(energies))))
     print('actually starting with ', N, 'photons')
     positions=lengths+dx/2
+    positions=10*positions #scintNRG dealt in cm, here i work with mm
     weights=np.int_(np.rint(energies/np.min(energies)))
     decayPosZ=np.repeat(positions, weights)
     decayPos=np.zeros((len(decayPosZ),3))

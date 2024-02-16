@@ -82,7 +82,7 @@ energies=astar[:,0]
 dEdxs=astar[:,1]
 densityAr=0.00115 #g/cc
 dEdxs=densityAr*dEdxs #normalizing ASTAR stopping powers with density of the medium
-big=16 #how finly the path is chopped up (stupid name i know)
+big=16 #how finely the path is chopped up (stupid name i know)
 lengths=np.linspace(0,7,int(2**big)) #7cm, that's about how far the Rn's alpha reaches (bit more actually)
 
 Rn222Q=5.5904 #MeV
@@ -113,7 +113,7 @@ def alpha_energies(init_E):
 #MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
 energies=alpha_energies(Rn222Q)
 lengths=lengths[energies>0]   #
-energies=energies[energies>0] #8cm is a little too long, so there could be some unphysical negatives in here to get rid of
+energies=energies[energies>0] #7cm is a little too long, so there could be some unphysical negatives in here to get rid of
 energies=energies[:-1]-energies[1:] #finding difference of adjacent elements in the energy list (differentiating the cumulative energy loss)
 lengths=lengths[:-1] #so now energies[0] means energy lost between lengths[0] and lengths[0]+dx
 dx=lengths[1]-lengths[0]
