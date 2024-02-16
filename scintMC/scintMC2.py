@@ -114,7 +114,7 @@ print('decay calculations done\n')'''
 
 '''start the radon hitting'''
 # Load the STL files...
-stlname='detector_chamber4_cut_shift_long.stl'
+stlname='detector_chamber4_cut_long_cent.stl'
 my_mesh = mesh.Mesh.from_file(stlname)
 my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
 
@@ -128,6 +128,9 @@ elif stlname=='detector_chamber4_cut_shift.stl':
 elif stlname=='detector_chamber4_cut_shift_long.stl':
     cylinder_zmin, cylinder_zmax = 2, 64
     detectZ = 54
+elif stlname=='detector_chamber4_cut_long_cent.stl':
+    cylinder_zmin, cylinder_zmax = 0, 55
+    detectZ = 24
 
 N=int(4) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
 print('starting with {} radon decays'.format(N))
