@@ -25,7 +25,7 @@ N=556982
 M=1
 option=2
 stlname='detector_chamber4_cut_noTefl.stl'
-load('scintMC_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M))
+load('scintMC3_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M))
 print(sipm_intersections)
 x=sipm_intersections[:,0]
 y=sipm_intersections[:,1]

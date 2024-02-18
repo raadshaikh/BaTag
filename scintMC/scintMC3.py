@@ -126,8 +126,8 @@ poPos=decayPos
 poDir=decayDir
 
 #find solid angle of feasability. sipm is a 6x6mm square, normal to x-axis, centred at (21, 0, 54)
-yp=(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
-zp=(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
+yp=poPos[:,1]+(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
+zp=poPos[:,2]+(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
 success_indices=np.logical_and.reduce([yp>-detectR/2, yp<detectR/2, zp>detectZ-(detectR/2), zp<detectZ+(detectR/2)])
 filter_decays_po()
 
@@ -157,7 +157,7 @@ for i in range(lenpoPos):
         success_indices[i]=True
         t=O[0]-np.array([cylinderR+1,yp[i],zp[i]])
         t=np.sqrt(np.dot(t,t))
-        print(O[0], D[0])
+        #print(O[0], D[0])
         sipm_intersections.append(list(O[0]+t*D[0])) #O+tD
 
 sipm_intersections=np.array(sipm_intersections)
@@ -171,7 +171,7 @@ decayDensity=N/volume
 num_successes=len(poPos)
 efficiency=num_successes/(N*M)
 #save variables you need
-save('scintMC_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M), 'N', 'M', 'volume', 'num_successes', 'poPos', 'sipm_intersections')
+save('scintMC3_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M), 'N', 'M', 'volume', 'num_successes', 'poPos', 'sipm_intersections')
 #load('pipsMC2_output')
 
 print('{} photons detected.'.format(num_successes))

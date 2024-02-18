@@ -248,8 +248,8 @@ poDir=np.random.normal(0,1,(len(poPos),3))
 poDir=poDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',poDir,poDir)), (len(poDir),1))
 
 #find solid angle of feasability. sipm is a 6x6mm square, normal to x-axis, centred at (21, 0 54)
-yp=(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
-zp=(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
+yp=poPos[:,1]+(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
+zp=poPos[:,2]+(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
 success_indices=np.logical_and.reduce([yp>-detectR/2, yp<detectR/2, zp>detectZ-(detectR/2), zp<detectZ+(detectR/2)])
 filter_decays_po()
 
@@ -277,7 +277,9 @@ for i in range(lenpoPos):
     mask2=np.logical_and.reduce([tuv[:,0]>Epsilon, tuv[:,1]>Epsilon, tuv[:,2]>Epsilon, tuv[:,1]<1+Epsilon, tuv[:,1]+tuv[:,2]<1+Epsilon])
     if mask2.sum()==0: #this photon hits the detector and nothing else, so keep it
         success_indices[i]=True
-        sipm_intersections.append(list(O[0]+t1[i]*D[0])) #O+tD #WRONG t1 is WRONG HERE!!!!!
+        t=O[0]-np.array([cylinderR+1,yp[i],zp[i]])
+        t=np.sqrt(np.dot(t,t))
+        sipm_intersections.append(list(O[0]+t[i]*D[0])) #O+tD #WRONG t1 is WRONG HERE!!!!!
 
 sipm_intersections=np.array(sipm_intersections)
 filter_decays_po()
