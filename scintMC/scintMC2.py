@@ -277,7 +277,7 @@ for i in range(lenpoPos):
     mask2=np.logical_and.reduce([tuv[:,0]>Epsilon, tuv[:,1]>Epsilon, tuv[:,2]>Epsilon, tuv[:,1]<1+Epsilon, tuv[:,1]+tuv[:,2]<1+Epsilon])
     if mask2.sum()==0: #this photon hits the detector and nothing else, so keep it
         success_indices[i]=True
-        sipm_intersections.append(list(O[0]+t1[i]*D[0])) #O+tD
+        sipm_intersections.append(list(O[0]+t1[i]*D[0])) #O+tD #WRONG t1 is WRONG HERE!!!!!
 
 sipm_intersections=np.array(sipm_intersections)
 filter_decays_po()

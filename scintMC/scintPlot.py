@@ -24,8 +24,20 @@ def load(filename):
 N=556982
 M=1
 option=2
-stlname='detector_chamber4_cut.stl'
+stlname='detector_chamber4_cut_noTefl.stl'
 load('scintMC_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M))
+print(sipm_intersections)
+x=sipm_intersections[:,0]
+y=sipm_intersections[:,1]
+z=sipm_intersections[:,2]
+plt.subplot(311)
+plt.hist(x)
+plt.subplot(312)
+plt.hist(y)
+plt.subplot(313)
+plt.hist(z)
+plt.show()
+exit()
 
 #should have saved this from scintMC2 but i'm not running that again right now
 big=16
@@ -44,7 +56,7 @@ r=np.sqrt(x**2+y**2)
 theta=np.arctan2(y,x)
 theta=theta*180/np.pi
 
-plt.title(stlname)
+plt.suptitle(stlname)
 plt.subplot(411)
 plt.xlim((0,67))
 plt.hist(decayPosZ, label='z all photons (mm)')
@@ -60,10 +72,10 @@ plt.legend()
 plt.subplot(414)
 plt.hist(theta, label='theta teflon hits (deg)')
 plt.legend()
-plt.show()
 
 '''plt.scatter(theta, z, alpha=0.7, s=1)
 plt.xlabel('$theta$ (deg)')
 plt.ylabel('z (mm)')
 plt.show()'''
 plt.savefig('scintPlot_{}_output{}_{}x{}.png'.format(stlname[18:-4],option,N,M), bbox_inches='tight')
+plt.show()
