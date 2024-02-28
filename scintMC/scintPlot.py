@@ -26,17 +26,50 @@ M=1
 option=2
 stlname='detector_chamber4_cut_noTefl.stl'
 load('scintMC3_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M))
-print(sipm_intersections)
-x=sipm_intersections[:,0]
-y=sipm_intersections[:,1]
-z=sipm_intersections[:,2]
-plt.subplot(311)
-plt.hist(x)
+xpo=poPos[:,0]
+ypo=poPos[:,1]
+zpo=poPos[:,2]
+xsi=sipm_intersections[:,0]
+ysi=sipm_intersections[:,1]
+zsi=sipm_intersections[:,2]
+'''plt.subplot(311)
+plt.hist(xsi)
 plt.subplot(312)
-plt.hist(y)
+plt.hist(ysi)
 plt.subplot(313)
-plt.hist(z)
-plt.show()
+plt.hist(zsi)'''
+
+'''
+#not needed since incident angle i am assuming to be irrelevant
+incident_rays=sipm_intersections-poPos
+incident_rays=incident_rays/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',incident_rays,incident_rays)), (len(incident_rays),1)) #normalise
+cos_theta_i=incident_rays[:,0]
+theta_i=np.arccos(cos_theta_i)
+theta_i=theta_i*180/np.pi #radians to degrees
+angle_hist=plt.hist(theta_i, bins=50)
+bins, heights = angle_hist[1], angle_hist[0]
+bin_centres=bins[:-1]+((bins[1]-bins[0])*0.5)'''
+
+#careful here !
+
+'''
+#this is wrong!
+weights=np.cos(bin_centres*np.pi/180)**2 #tpb reemission
+weights2=np.ones(len(bin_centres))-(0.2/55)*bin_centres #sipm pde
+weights3=weights*weights2
+#print(bins, bin_centres, heights)
+angle_accounted = np.dot(heights, weights3)'''
+angles=np.linspace(90,180,1000)
+weights=np.cos(angles*np.pi/180)**2 #tpb reemission
+weights=weights/np.sum(weights) #normalising the integral to 1 so this is a probability distribution
+angles=180-angles
+weights2=np.ones(len(angles))-(0.2/55)*angles #sipm pde
+weights3=np.dot(weights,weights2)
+angle_accounted=np.array([669, 664])*weights3 #assuming angle of incidence of the uv photons on tpb is irrelevant
+fraction=82333/556982
+final_counts=angle_accounted*fraction*0.5*0.6
+print(np.mean(final_counts), '+/-', np.std(final_counts))
+#plt.show()
 exit()
 
 #should have saved this from scintMC2 but i'm not running that again right now

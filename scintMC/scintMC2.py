@@ -154,7 +154,7 @@ if option==1:
     decayPos=np.repeat(decayPos, M, axis=0)
 elif option==2:
     #this is the one artificial decay from the pips going straight up case
-    big=16
+    big=15
     load('scintNRG_output_{}'.format(big))
     N=int(np.sum(np.rint(energies/np.min(energies))))
     print('actually starting with ', N, 'photons')
@@ -184,7 +184,7 @@ b=2*(decayPos[:,0]*decayDir[:,0] + decayPos[:,1]*decayDir[:,1])
 c=np.power(decayPos[:,0], 2)+np.power(decayPos[:,1], 2)-cylinderR**2
 t1=(-b+np.power(np.power(b,2)-4*a*c, 0.5))/(2*a)
 cylinder_intersect_z=decayPos[:,2]+t1*decayDir[:,2]
-success_indices=np.logical_and(cylinder_intersect_z>cylinder_zmin, cylinder_intersect_z<cylinder_zmax)
+success_indices=np.logical_and(cylinder_intersect_z>cylinder_zmin, cylinder_intersect_z<cylinder_zmax, t1>0)
 filter_decays()
 
 #use ray-casting algorithm
@@ -250,7 +250,7 @@ poDir=poDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',poDir,poDir)), (len(po
 #find solid angle of feasability. sipm is a 6x6mm square, normal to x-axis, centred at (21, 0 54)
 yp=poPos[:,1]+(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
 zp=poPos[:,2]+(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
-success_indices=np.logical_and.reduce([yp>-detectR/2, yp<detectR/2, zp>detectZ-(detectR/2), zp<detectZ+(detectR/2)])
+success_indices=np.logical_and.reduce([yp>-detectR/2, yp<detectR/2, zp>detectZ-(detectR/2), zp<detectZ+(detectR/2), (cylinderR+1-poPos[:,0])/poDir[:,0]>0])
 filter_decays_po()
 
 #i cut the sipms out of the model, so we'll pass the feasible photons that don't intersect with anything

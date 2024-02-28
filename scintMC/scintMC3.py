@@ -128,7 +128,8 @@ poDir=decayDir
 #find solid angle of feasability. sipm is a 6x6mm square, normal to x-axis, centred at (21, 0, 54)
 yp=poPos[:,1]+(poDir[:,1]/poDir[:,0])*(cylinderR+1-poPos[:,0]) #y_Plane, referring to the y-coord of the point where the photon intersects with the Plane of the sipm
 zp=poPos[:,2]+(poDir[:,2]/poDir[:,0])*(cylinderR+1-poPos[:,0])
-success_indices=np.logical_and.reduce([yp>-detectR/2, yp<detectR/2, zp>detectZ-(detectR/2), zp<detectZ+(detectR/2)])
+#the last condition here imposes that 't' is positive
+success_indices=np.logical_and.reduce([yp>-detectR/2, yp<detectR/2, zp>detectZ-(detectR/2), zp<detectZ+(detectR/2), (cylinderR+1-poPos[:,0])/poDir[:,0]>0])
 filter_decays_po()
 
 #i cut the sipms out of the model, so we'll pass the feasible photons that don't intersect with anything
