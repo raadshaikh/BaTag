@@ -24,7 +24,7 @@ def load(filename):
 N=556982
 M=1
 option=2
-stlname='detector_chamber4_cut_noTefl.stl'
+stlname='detector_chamber4_cut_spaced_noTefl.stl'
 load('scintMC3_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M))
 xpo=poPos[:,0]
 ypo=poPos[:,1]
@@ -41,6 +41,7 @@ plt.hist(zsi)'''
 
 '''
 #not needed since incident angle i am assuming to be irrelevant
+
 incident_rays=sipm_intersections-poPos
 incident_rays=incident_rays/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',incident_rays,incident_rays)), (len(incident_rays),1)) #normalise
 cos_theta_i=incident_rays[:,0]
@@ -65,7 +66,7 @@ weights=weights/np.sum(weights) #normalising the integral to 1 so this is a prob
 angles=180-angles
 weights2=np.ones(len(angles))-(0.2/55)*angles #sipm pde
 weights3=np.dot(weights,weights2)
-angle_accounted=np.array([669, 664])*weights3 #assuming angle of incidence of the uv photons on tpb is irrelevant
+angle_accounted=np.array([627, 644, 671, 643, 659, 649, 637, 645])*weights3 #assuming angle of incidence of the uv photons on tpb is irrelevant
 fraction=82333/556982
 final_counts=angle_accounted*fraction*0.5*0.6
 print(np.mean(final_counts), '+/-', np.std(final_counts))
