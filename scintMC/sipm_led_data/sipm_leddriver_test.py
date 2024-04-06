@@ -7,9 +7,9 @@ def fname(c,r,v,j,n): #construct filename from parameters to fetch the waveform 
     head = 'c'+str(c)+'r'+str(r)+'v'+str(v)+'_'+str(j)
     return head+'/'+head+'_'+str(n).zfill(4)+'.csv'
 
-c=2 #LED driver channel
+c=6 #LED driver channel
 r=1 #LED pulse rate in MHz
-v=5.5 #LED control voltage
+v=12.5 #LED control voltage
 Bpps=[] #array containing peak to peak voltages of channel B waveforms
 Cpps=[]
 Bareas=[] #array containing area-under-the-curve of channel B waveforms (unused, i thought of doing this but it turned out to be more trouble than it was worth)
@@ -36,19 +36,20 @@ Bpps=1*np.array(Bpps) #at one point i needed to multiply by 1000 to convert mV a
 Cpps=1*np.array(Cpps)
 
 plt.suptitle('Channel '+str(c)+', Voltage '+str(v)+' V')
-
+print('Channel '+str(c)+', Voltage '+str(v)+' V')
 
 arr=Bpps
 x=np.linspace(np.mean(arr)-3*np.std(arr),np.mean(arr)+3*np.std(arr), 50)
 print(np.mean(arr), ' +/- ', np.std(arr))
 N=int((np.mean(arr)/np.std(arr))**2) #Dr. Gornea's statistical photoelectron count estimator (i still don't completely understand this to be honest)
 print(N)
+print(np.mean(arr)/N) #mV per photoelectron
 plt.subplot(1,2,1)
-plt.hist(arr, bins=5, density=True, label='Pulse ptp$={}\pm{}$ mV\n$N={}$\nGain={} mV/pe'.format(round(np.mean(arr),4), round(np.std(arr),4), N, round(np.mean(arr)/N,2)))
+plt.hist(arr, bins=5, density=True, label='Pulse ptp$={}\pm{}$ mV\n$N={}$\nGain={} mV/pe'.format(round(np.mean(arr),4), round(np.std(arr),4), N, round(np.mean(arr)/N,4)))
 #number of bins to be adjusted by hand for each dataset!
-arrFit = ss.norm.pdf(x,np.mean(arr), np.std(arr))
+# arrFit = ss.norm.pdf(x,np.mean(arr), np.std(arr))
+# plt.plot(x,arrFit)
 plt.title('sipm 1, 29V')
-plt.plot(x,arrFit)
 plt.legend()
 
 arr=Cpps
@@ -56,11 +57,12 @@ x=np.linspace(np.mean(arr)-3*np.std(arr),np.mean(arr)+3*np.std(arr), 50)
 print(np.mean(arr), ' +/- ', np.std(arr))
 N=int((np.mean(arr)/np.std(arr))**2)
 print(N)
+print(np.mean(arr)/N)
 plt.subplot(1,2,2)
-plt.hist(arr, bins=5, density=True, label='Pulse ptp$={}\pm{}$ mV\n$N={}$\nGain={} mV/pe'.format(round(np.mean(arr),4), round(np.std(arr),4), N, round(np.mean(arr)/N,2)))
-arrFit = ss.norm.pdf(x,np.mean(arr), np.std(arr))
+plt.hist(arr, bins=5, density=True, label='Pulse ptp$={}\pm{}$ mV\n$N={}$\nGain={} mV/pe'.format(round(np.mean(arr),4), round(np.std(arr),4), N, round(np.mean(arr)/N,4)))
+# arrFit = ss.norm.pdf(x,np.mean(arr), np.std(arr))
+# plt.plot(x,arrFit)
 plt.title('sipm 2, 29.3V')
-plt.plot(x,arrFit)
 plt.legend()
 
 ## to check correlation between both sipms
