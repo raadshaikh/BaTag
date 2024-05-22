@@ -43,6 +43,7 @@ def hist_of_addition(A, B, bins=10, plot=False):
     C_edges = B_edges[0] + A_edges[0] + np.arange(0, len(C_heights) + 1) * step
     
     if plot:
+        '''
         plt.figure(figsize=(12, 4))
         plt.subplot(131)
         plt.bar(A_edges[:-1], Normalizer*A_heights, step)
@@ -53,6 +54,16 @@ def hist_of_addition(A, B, bins=10, plot=False):
         plt.subplot(133)
         plt.bar(C_edges[:-1], Normalizer*C_heights, step)
         plt.title('convolved')
+        '''
+        
+        plt.bar(A_edges[:-1], A_heights, step, label='simulated data')
+        plt.bar(C_edges[:-1], C_heights, step, color='orange', alpha=0.8, label='convolved with detector response, $\sigma=0.475$ MeV')
+        plt.xlim(0,7)
+        plt.xlabel('energy of alpha particle as it hits detector (MeV)')
+        plt.ylabel('abundance')
+        plt.legend()
+        plt.title('')
+        
     return C_edges, C_heights
 
 
@@ -106,6 +117,7 @@ def alpha_energies(init_E):
 
 MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
 
+'''
 #adding poloniums stuck to pips
 po218s=Po218Q*np.ones(int(fielddecays/2))
 po214s=Po214Q*np.ones(int(fielddecays/2))
@@ -120,6 +132,7 @@ poloniums=np.append(poloniums, monopoloniums)
 
 MC_energies_detected=np.append(MC_energies_detected, poloniums)
 #MC_energies_detected=poloniums
+'''
 
 #the detector region i cut out is a bit too large, so some particles that would have been exhausted
 #by the time they hit the detector are inadvertently included. cutting them out here with this mask
@@ -137,15 +150,19 @@ FDbins = lambda v: int(np.ptp(v)/(2*ss.iqr(v)*len(v)**(-1./3))) #Freedman-Diacon
 
 hist_of_addition(MC_energies_detected, np.random.normal(0,sigma,2**22), bins=FDbins(MC_energies_detected), plot=True)
 
-#plt.hist(MC_energies_detected, bins=FDbins(MC_energies_detected), label='simulated data')
+#plt.hist(MC_energies_detected, bins=2*FDbins(MC_energies_detected), label='simulated data')
 
-'''response2=np.random.normal(0,sigma,len(MC_energies_detected))
+'''
+response2=np.random.normal(0,sigma,len(MC_energies_detected))
 plt.hist(response2, bins=FDbins(response2), alpha=0.7)
 convolved2=np.convolve(MC_energies_detected,response2, mode='full')
-plt.hist(convolved2, bins=FDbins(convolved2), alpha=0.7)'''
+plt.hist(convolved2, bins=FDbins(convolved2), alpha=0.7)
+#'''
 
-'''plt.hist(convolved, bins=FDbins(convolved), color='orange', alpha=0.8, label='convolved with detector response, $\sigma=0.475$ MeV')
+'''
+plt.hist(convolved, bins=FDbins(convolved), color='orange', alpha=0.8, label='convolved with detector response, $\sigma=0.475$ MeV')
 plt.xlabel('energy of alpha particle as it hits detector (MeV)')
 plt.ylabel('abundance')
-plt.legend()'''
+plt.legend()
+#'''
 plt.show()

@@ -80,10 +80,11 @@ MC_distances=np.array(successes[:,2], dtype=float)*0.1 #converting mm to cm
 astar=np.loadtxt('apdata.pl.txt') #data table from ASTAR
 energies=astar[:,0]
 dEdxs=astar[:,1]
-densityAr=0.00115 #g/cc
+pressure = 2.0 #in bars
+densityAr=0.0016448*pressure #g/cc #at 19 deg C
 dEdxs=densityAr*dEdxs #normalizing ASTAR stopping powers with density of the medium
 big=16 #how finely the path is chopped up (stupid name i know)
-lengths=np.linspace(0,7,int(2**big)) #7cm, that's about how far the Rn's alpha reaches (bit more actually)
+lengths=np.linspace(0,7,int(2**big)) #7cm, that's about how far the Rn's alpha reaches (bit more actually) ()
 
 Rn222Q=5.5904 #MeV
 Po218Q=6.1
@@ -122,7 +123,7 @@ print(lengths)
 print(energies/np.min(energies))
 print(np.rint(energies/np.min(energies)))'''
 print(np.sum(np.rint(energies/np.min(energies))))
-save('scintNRG_output_{}'.format(big), 'energies', 'lengths', 'dx')
+save('scintNRG_output_{}_{}'.format(big, pressure), 'energies', 'lengths', 'dx')
 
 
 '''

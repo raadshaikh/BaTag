@@ -46,18 +46,27 @@ def hist_of_addition(A, B, bins=10, plot=False):
         plt.figure(figsize=(12, 4))
         plt.subplot(131)
         plt.bar(A_edges[:-1], Normalizer*A_heights, step)
+        plt.xlim(0,10)
+        plt.xlabel('energy (MeV)')
+        plt.ylabel('counts/min')
+        plt.yscale('log')
         plt.title('data')
         plt.subplot(132)
         plt.bar(B_edges[:-1], B_heights/len(B), step)
         plt.title('response')
         plt.subplot(133)
         plt.bar(C_edges[:-1], Normalizer*C_heights, step)
+        plt.xlim(0,10)
+        plt.xlabel('energy (MeV)')
+        plt.ylabel('counts/min')
+        plt.yscale('log')
         plt.title('convolved')
     return C_edges, C_heights
 
 version=5
 dt=1
-timesteps=int(0.8*24*60*60/dt)
+timesteps=int(24*60*60/dt)
+timesteps=10000
 load('pipsMC{}_output_{}'.format(version,timesteps))
 
 #we have N, volume, decayDensity, num_successes, efficiency, successes, fielddecays, Normalizer, po218successes, po214successes
@@ -76,6 +85,8 @@ print('po214 non-field successes= ', len(po214successes))
 #print(successes[:,0][0]) #first successful decay position as xyz list
 MC_distances=np.array(successes[:,2], dtype=float)*0.1 #converting mm to cm
 
+# Normalizer = 1/(24*60) #converting counts to counts/min
+Normalizer *= 0.8/1.2 #pressures and hence densities of chambers affecting density of decays
 
 
 astar=np.loadtxt('apdata.pl.txt') #data table from ASTAR
@@ -136,6 +147,7 @@ MC_energies_detected=MC_energies_detected[MC_energies_detected>0]
 #FWHM=14e-3 #MeV. From Mirion datasheet for PD300-15-300AM'
 #sigma=FWHM/(2*np.sqrt(2*np.log(2)))
 sigma=0.475 #MeV. From Americium test
+sigma=0.160 #updated detector resolution
 response=ssig.windows.gaussian(len(MC_energies_detected), sigma)
 convolved=ssig.convolve(MC_energies_detected, response, mode='same')/sum(response)
 

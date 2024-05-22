@@ -52,7 +52,7 @@ volume=xrange*yrange*zrange
 detectR = 9.77 #radius of circular active region on detector. centered at origin, in xy plane.
 alpha_energy_init=5.5904 #MeV. idk, why not just put it in here
 
-N=int(2**9) #number of decays
+N=int(2**20) #number of decays
 #N=int(4000*volume) #24000 Rn/cc, over 1 day, means 4000 decays/cc
 #assert(N<2e4)
 Normalizer=4000*volume/N
@@ -128,8 +128,8 @@ for i in range(len(decayPos)):
     #funnily enough we probably don't really need the exact intersection point or anything
     #mask2.sum()/N gives the geometric efficiency, and t will go into SRIM
     intersections=np.multiply(np.reshape(tuv[mask2][:,0],(mask2.sum(),1)), D[mask][mask2])+O[mask][mask2]
-    print(intersections)
-    print('\n')
+    #print(intersections)
+    #print('\n')
     if mask2.sum()==2: #this decay hits the detector and nothing else, so jot it down somewhere. List of O, D, t
         successes.append([list(O[mask][mask2][0]), list(D[mask][mask2][0]), tuv[mask2][:,0][0]])
 

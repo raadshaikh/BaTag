@@ -65,7 +65,7 @@ detectR = 6 #side length of square SiPM detector
 
 '''start the radon hitting'''
 # Load the STL files...
-stlname='detector_chamber4_cut_spaced_noTefl.stl'
+stlname='detector_chamber4_cut_noTefl.stl'
 my_mesh = mesh.Mesh.from_file(stlname)
 my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
 
@@ -84,7 +84,7 @@ elif stlname=='detector_chamber4_cut_long_cent.stl' or 'detector_chamber4_cut_lo
     detectZ = 24
 
 N=int(4) #24000 Rn/cc, over 1 day, means 4000 decays/cc. temporarily reducing this for speed
-print('starting with {} radon decays'.format(N))
+#print('starting with {} radon decays'.format(N))
 
 #generate random positions and direction rays for each photon.
 #N*M rows, 3 columns. each row identifies a photon, and there is a column for each coordinate
@@ -94,11 +94,11 @@ print('starting with {} radon decays'.format(N))
 #although 'decaydir' is still just N*M different random direction cosines since each photon has a different direction regardless of decay
 M=1
 #sipmeff=0.5 IMPORTANT manually reduce the efficiency by this much later
-print('each producing {} photons, so total {} photons'.format(M, N*M))
+#print('each producing {} photons, so total {} photons'.format(M, N*M))
 
 option=2
 print('option=',option)
-#2 kinds of simulations: start with uniformly populated uv photons or start with the photons produced by the one radon decay
+#2 kinds of simulations: start with uniformly populated uv photons or start with the photons produced by the one americium decay
 
 if option==1:
     decayPos=np.random.uniform([xmin, ymin, zmin], [xmax, ymax, zmax], (N,3))
@@ -106,9 +106,10 @@ if option==1:
 elif option==2:
     #this is the one artificial decay from the pips going straight up case
     big=16
-    load('scintNRG_output_{}'.format(big))
+    pressure=2.0 #in bar
+    load('scintNRG_output_{}_{}'.format(big, pressure))
     N=int(np.sum(np.rint(energies/np.min(energies))))
-    print('actually starting with ', N, 'photons')
+    print('actually starting with ', N, 'photons, in ', pressure, ' bar argon')
     positions=lengths+dx/2
     positions=10*positions #scintNRG dealt in cm, here i work with mm
     weights=np.int_(np.rint(energies/np.min(energies)))
@@ -173,7 +174,6 @@ num_successes=len(poPos)
 efficiency=num_successes/(N*M)
 #save variables you need
 save('scintMC3_{}_output{}_{}x{}'.format(stlname[18:-4],option,N,M), 'N', 'M', 'volume', 'num_successes', 'poPos', 'sipm_intersections')
-#load('pipsMC2_output')
 
 print('{} photons detected.'.format(num_successes))
 print('efficiency: {}/{} = {}'.format(num_successes,N*M,efficiency))

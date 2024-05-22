@@ -44,7 +44,8 @@ def load(filename):
 
 
 dt=1 #timestep in seconds
-timesteps=int(0.8*24*60*60/dt)
+timesteps=int(24*60*60/dt)
+timesteps = 10000
 
 #geometry
 xmin, xmax = -68.82, 68.82 #bounding box for volume under consideration
@@ -60,16 +61,16 @@ detectR = 9.77 #radius of circular active region on detector. centered at origin
 #interpolate the given data to find out the activity of each species at every point in time
 #these are all single-decay reactions, so just integrate activity of the poloniums to find out how many of their decays there are
 
-times_given=np.array([0,86400,172800,259200,345600,432000,864000])
+times_given=np.array([0,10800,21600,86400,172800,259200,345600,432000,864000])
 
 # A for Activity
-Ra226A=np.array([5000.00000025,4999.994062,4999.988124,4999.982185,4999.976247,4999.970309,4999.940618]) #t=0 value extrapolated
-Rn222A=np.array([0,833.6894579	,1528.370218	,2107.220312	,2589.553113	,2991.46172	,4193.130921])
-Po218A=np.array([0,	831.3278231	,1526.402361	,2105.580574	,2588.186785	,2990.323214	,4192.673588])
-Pb214A=np.array([0,	810.8106227	,1509.306184	,2091.335006	,2576.316521	,2980.4322	,4188.700407])
-Bi214A=np.array([0	,795.5202288	,1496.565299	,2080.718531	,2567.470235	,2973.060946	,4185.739404])
-Po214A=np.array([0	,795.5202267	,1496.565297	,2080.71853	,2567.470234	,2973.060945	,4185.739404])
-Pb210A=np.array([0	,0.033151067	,0.131646674	,0.284703018	,0.483216622	,0.719601905	,2.281773287])
+Ra226A=np.array([5000.00000025, 4999.999258, 4999.998515, 4999.994062,4999.988124,4999.982185,4999.976247,4999.970309,4999.940618]) #t=0 value extrapolated
+Rn222A=np.array([0, 112.7145822, 222.8882321, 833.6894579, 1528.370218	,2107.220312	,2589.553113	,2991.46172	,4193.130921])
+Po218A=np.array([0,	109.944266, 220.1803673, 831.3278231	, 1526.402361	,2105.580574	,2588.186785	,2990.323214	,4192.673588])
+Pb214A=np.array([0,	86.14118592, 196.6577366, 810.8106227	,1509.306184	,2091.335006	,2576.316521	,2980.4322	,4188.700407])
+Bi214A=np.array([0	,68.84997429	, 179.1327122, 795.5202288	,1496.565299	,2080.718531	,2567.470235	,2973.060946	,4185.739404])
+Po214A=np.array([0	,68.84997191, 179.1327097, 795.5202267	,1496.565297	,2080.71853	,2567.470234	,2973.060945	,4185.739404])
+Pb210A=np.array([0	,0.000259254, 0.001578593, 0.033151067	,0.131646674	,0.284703018	,0.483216622	,0.719601905	,2.281773287])
 
 #Aif for Activity interpolation function
 Ra226Aif=interp1d(times_given, Ra226A, kind='cubic')
@@ -100,7 +101,9 @@ plt.plot(times_given, Pb214A, 'o', times_smooth, Pb214Ai, '-')
 plt.plot(times_given, Bi214A, 'o', times_smooth, Bi214Ai, '-')
 plt.plot(times_given, Po214A, 'o', times_smooth, Po214Ai, '-')
 plt.plot(times_given, Pb210A, 'o', times_smooth, Pb210Ai, '-')
-plt.show()'''
+plt.show()
+exit()
+'''
 
 #AiI for Activity interpolated Integrated
 
@@ -114,7 +117,8 @@ Pb210AiI=Pb210Ai.sum()*dt
 
 #these are just the old variable names I was using.
 #dividing by total volume to get density, then multiplying by my bounding box to get how many decays to consider
-total_volume= 60e6 #in mm^3
+total_volume= 80e6 #in mm^3 #this was old volume with cryostat
+total_volume = 3.3e6 #new volume with small source chamber
 N=int(volume*Rn222AiI/total_volume)
 Po218s=int(Po218AiI*volume/total_volume)
 Po214s=int(Po214AiI*volume/total_volume)
