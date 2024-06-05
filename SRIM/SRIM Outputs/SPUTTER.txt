@@ -1,0 +1,31 @@
+============================== SRIM-2013.00 ==============================
+==============================================================================
+------------------------------------------------------------------------------
+ =====================================================================
+                       SPUTTERING   CALCULATION                       
+ =====================================================================
+ =====================================================================
+ =   AXIS DEFINITIONS: X=Depth, Y,Z= Lateral plane of target surface.=
+ =   (If beam enters target at an angle, this tilt is in Y direction)=
+ =   Shown are: Ion Number                                           =
+ =              Sputtered atom type (atomic name) and energy (eV)    =
+ =                 (Note: SBE is NOT subtracted from atom energy)    =
+ =              Point of ejection relative to ion entrance point.    =
+ =              Trajectional cosines of ejected atom.                =
+ =                  Cosine (X) is negative indicating motion away    =
+ =                     from the target surface.                      =
+ =                  Cosine (Y) and Cosine (Z) are transverse motion. =
+ =====================================================================
+ ==================  CALCULATION   DATA  =============================
+  Calculation Date= 06-05-2024, Time= 13:56:03
+  Ion Data: Name,   Mass,   Energy (keV)
+           He    4.003 5600.
+  Displacement Energy of Ar = 5.00000 eV
+  Latt.Binding Energy of Ar = 1.00000 eV
+  SurfaceBind. Energy of Ar = 2.00000 eV
+==============================================================================
+=  This file tabulates the kinetics of ions or atoms leaving the target.     =
+=  Column #1: S= Sputtered Atom, B= Backscattered Ion, T= Transmitted Ion.   =
+=  Col.#2: Ion Number, Col.#3: Z of atom leaving, Col.#4: Atom energy (eV).  =
+=  Col.#5-7: Last location:  X= Depth into target, Y,Z= Transverse axes.     =
+=  Col.#8-10: 

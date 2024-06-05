@@ -21,6 +21,12 @@ def filter_decays_po():
     global success_indices
     poPos=poPos[success_indices]
     poDir=poDir[success_indices]
+def filter_decays_poPlate():
+    global poPlatePos
+    global poPlateDir
+    global success_indices
+    poPlatePos=poPlatePos[success_indices]
+    poPlateDir=poPlateDir[success_indices]
 
 def save(filename, *args):
     # Get global dictionary
@@ -45,7 +51,7 @@ def load(filename):
 
 dt=1 #timestep in seconds
 # timesteps=int(2*60*60/dt)
-timesteps = 7000
+timesteps = 9500
 print('timesteps = ',timesteps)
 
 #geometry
@@ -167,7 +173,7 @@ decayDir=decayDir.astype(np.float16)
 xydistsquared=np.power(decayPos[:,0], 2)+np.power(decayPos[:,1], 2)
 success_indices=np.logical_not(np.logical_and.reduce([decayPos[:,2]>41, xydistsquared>645]))
 filter_decays()
-# print(len(decayPos))
+print(len(decayPos))
 
 zs=decayPos[:,2]
 rhosquareds=np.power(decayPos[:,0], 2)+np.power(decayPos[:,1], 2)
@@ -250,15 +256,21 @@ poPos=poPos.astype(np.float16) #i don't need too much precision
 xydistsquared=np.power(poPos[:,0], 2)+np.power(poPos[:,1], 2)
 success_indices=np.logical_not(np.logical_and.reduce([poPos[:,2]>41, xydistsquared>645]))
 poPos=poPos[success_indices]
-#cutting out stuff in field region.
+print((Po218s/(Po218s+Po214s))*len(poPos))
+
+#cutting out stuff in field region. #see comments a few lines down!
 #some ions that start here will stick to PIPS and are manually added later in pipsNRG3.py.
 #ions that start outside will never go in there.
 zs=poPos[:,2]
 rhosquareds=np.power(poPos[:,0], 2)+np.power(poPos[:,1], 2)
 fieldpomask=np.logical_and.reduce([zs<41.25, rhosquareds<67.24])
 fieldpos=fieldpomask.sum()
-success_indices=np.logical_not(fieldpomask)
-poPos=poPos[success_indices]
+
+#commenting this out because the experimental data suggests that not all poloniums are ions and thus they need to be considered even from inside the field region. for now assume none of them are ions and see how this assumption fares (mainly for the reverse field condition. in the deflection field condition things will be a bit different, since po218 especially would not have time to hit anything and gain an electron)
+
+# success_indices=np.logical_not(fieldpomask)
+# poPos=poPos[success_indices]
+
 #in reverse field conditions, these poloniums are blown back into the rest of the chamber and thus cannot simply be cut out. thus in pipsNRG4, for reverse field conditions only, mutliply the number of successful poloniums by (1+addifreverse) to account for these that would otherwise have been lost
 addifreverse = fieldpos/len(poPos)
 
@@ -310,11 +322,55 @@ po218successes=np.array(po218successes, dtype='object')
 po214successes=np.array(po214successes, dtype='object')
 
 
+
+
+'''adding some polonium to the underside of the bottom ring to see if plateout from that accurately describes the tail on the po214 we're seeing in the experimental data'''
+poPlatePos=np.random.uniform([xmin, ymin, 5-Epsilon], [xmax, ymax, 5], (Po214s,3))
+#dont take the starting number of po214s here literally. this number will need to be finetuned later anyways, so we just want a biggish number to get a statistically proper distribution of lengths
+poPlatePos=poPlatePos.astype(np.float16)
+xydistsquared=np.power(poPlatePos[:,0], 2)+np.power(poPlatePos[:,1], 2)
+success_indices=np.logical_not(np.logical_and.reduce([poPlatePos[:,2]>41, xydistsquared>645]))
+poPlatePos=poPlatePos[success_indices]
+rhosquareds=np.power(poPlatePos[:,0], 2)+np.power(poPlatePos[:,1], 2)
+success_indices=np.logical_and.reduce([rhosquareds<(35/2)**2, rhosquareds>(15.88/2)**2]) #restricting to the ring's surface
+poPlatePos=poPlatePos[success_indices]
+poPlateDir=np.random.normal(0,1,(len(poPlatePos),3))
+poPlateDir=poPlateDir.astype(np.float16)
+poPlateDir=poPlateDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',poPlateDir,poPlateDir)), (len(poPlateDir),1))
+success_indices=poPlateDir[:,2]<0
+filter_decays_poPlate()
+floor_intersections=poPlatePos - np.divide(np.multiply(poPlateDir, np.reshape(poPlatePos[:,2], (len(poPlatePos),1))), np.reshape(poPlateDir[:,2], (len(poPlateDir),1)))
+success_indices=np.einsum('ij...,ij->i...',floor_intersections,floor_intersections)<95.5 #(squared norm <300/pi)
+filter_decays_poPlate()
+poPlatesuccesses=[]
+i_successes=[]
+lenpoPlatePos=len(poPlatePos)
+for i in range(lenpoPlatePos):
+    if int(10000*i/lenpoPlatePos)%1==0: print("poloniums: {:.2f}%".format(100*i/len(poPlatePos)), end='\r')
+    O=np.tile(poPlatePos[i], (len(my_mesh),1))
+    D=np.tile(poPlateDir[i], (len(my_mesh),1))
+    v1=my_mesh[:,0]
+    v2=my_mesh[:,1]
+    v3=my_mesh[:,2]
+    normals_dcs_dot=np.einsum('ij...,ij->i...',np.cross(v2-v1, v3-v1),D)
+    mask=np.logical_or(normals_dcs_dot<-Epsilon, normals_dcs_dot>Epsilon)
+    MTmatrix=np.array([-D[mask].T, (v2-v1)[mask].T,(v3-v1)[mask].T]).T
+    MTvector=O[mask]-v1[mask]
+    tuv=np.linalg.solve(MTmatrix, MTvector)
+    mask2=np.logical_and.reduce([tuv[:,0]>Epsilon, tuv[:,1]>Epsilon, tuv[:,2]>Epsilon, tuv[:,1]<1+Epsilon, tuv[:,1]+tuv[:,2]<1+Epsilon])
+    if mask2.sum()==2:
+        poPlatesuccesses.append([list(O[mask][mask2][0]), list(D[mask][mask2][0]), tuv[mask2][:,0][0]])
+poPlatesuccesses=np.array(poPlatesuccesses, dtype='object')
+print('\nplated poloniums done')
+
+
+
+
 '''saving stuff'''
 decayDensity=N/volume
 num_successes=len(successes)
 efficiency=num_successes/N
 #output N, volume, decayDensity, num_successes, efficiency, successes
 conditions = 'reverse' #field conditions: transfer, deflection, reverse
-save('pipsMC6_output_{}'.format(timesteps), 'N', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'successes', 'fielddecays', 'Normalizer', 'Po218s', 'Po214s', 'po218successes', 'po214successes', 'addifreverse')
+save('pipsMC6_output_{}_noions_plated'.format(timesteps), 'N', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'successes', 'fielddecays', 'Normalizer', 'Po218s', 'Po214s', 'po218successes', 'po214successes', 'addifreverse', 'poPlatesuccesses')
 #load('pipsMC2_output')
