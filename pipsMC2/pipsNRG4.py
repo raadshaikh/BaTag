@@ -76,7 +76,7 @@ version=6
 dt=1
 # timesteps=int(3*60*60/dt)
 timesteps=9500
-timesteps2=9500 #see following comment.
+timesteps2=25000 #see following comment.
 if manual_adjustments == True:  timesteps=25000 #to make manual adjustments, keep the pool of possible datapoints large to choose from
 conditions='deflection'
 if isPlated:    load('pipsMC{}_output_{}_noions_plated'.format(version,timesteps))
@@ -188,7 +188,7 @@ astar=np.loadtxt('AR_apdata.pl.txt') #data table from ASTAR
 energies=astar[:,0]
 dEdxs_AR=astar[:,1]
 if conditions == 'reverse': pressure_detector, pressure_source = 0.9, 1.4
-if conditions == 'deflection': pressure_detector, pressure_source = 0.9, 1.4
+if conditions == 'deflection': pressure_detector, pressure_source = 1.3, 1.4
 if conditions == 'transfer': pressure_detector, pressure_source = 0.9, 1.4
 densityAr_detector=0.0016448*pressure_detector #g/cc #at 19 deg C
 densityAr_source=0.0016448*pressure_source
@@ -203,7 +203,7 @@ dEdxs_SI=2.33*np.loadtxt('SI_apdata.pl.txt')[:,1] #stopping power in silicon, mu
 if shuffle == True:  np.random.shuffle(MC_distances)
 if manual_adjustments == True:
     MC_distances = MC_distances[:n_Rn222s] #manually setting how many radons are seen, to try and match the experimental data
-MC_distances = MC_distances[:int(len(MC_distances)*density_fraction)] #less pressure (hence density) in the detector chamber so less activity there compared to system-wide average
+#MC_distances = MC_distances[:int(len(MC_distances)*density_fraction)] #less pressure (hence density) in the detector chamber so less activity there compared to system-wide average
 
 Rn222Q=5.5904 #MeV
 Po218Q=6.1
@@ -230,8 +230,59 @@ def alpha_energies(init_E, medium='argon'):
         alpha_energies[i]=alpha_energy
     return alpha_energies
 
+#'''
+##temporary: make a plot of this
+plt.plot(lengths[alpha_energies(Rn222Q)>0], alpha_energies(Rn222Q)[alpha_energies(Rn222Q)>0])
+plt.show()
+exit()
+#'''
+
 #the pipsMC#.py simulation gave a list of lengths the alphas had to go through, now we plug these into ASTAR data to get a list of energies the alphas will have when hitting the detector
 MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
+
+
+'''
+###temporary: making a cdf of distances travelled by radons, just to see how far away most of them are coming from
+#this is to judge the straight-line trajectory assumption by comparing to SRIM plots
+def ecdf(x):
+    xs = np.sort(x)
+    ys = np.arange(1, len(xs)+1)/float(len(xs))
+    return xs, ys
+xs, ys = ecdf(MC_distances[MC_energies_detected>0])
+plt.title('ecdf of travel distance of detected radon alphas in {} bar Ar'.format(pressure_detector))
+plt.plot(xs,ys)
+plt.xlabel('travel distance')
+plt.ylabel('cumulative probability')
+plt.show()
+exit()
+'''
+#'''
+###temporary: finding out where the successful radon alphas are coming from
+range=np.max(MC_distances[MC_energies_detected>0])
+print('range of radon alphas in {} bar Ar = '.format(pressure_detector), range)
+Os = np.array(list(successes[:,0]))
+xs = 0.1*Os[:,0]
+ys = 0.1*Os[:,1]
+zs = 0.1*Os[:,2]
+rs=np.sqrt(xs**2+ys**2+zs**2)
+xs=xs[rs<=range]
+ys=ys[rs<=range]
+zs=zs[rs<=range]
+rs=np.sqrt(xs**2+ys**2+zs**2)
+# fig = plt.figure()
+# ax = fig.add_subplot(projection='3d')
+# ax.set_title('where successful radon alphas are coming from ({} bar Ar)'.format(pressure_detector))
+# ax.set_xlabel('x (cm)')
+# ax.set_ylabel('y (cm)')
+# ax.set_zlabel('z (cm)')
+# ax.scatter(xs, ys, zs, s=1)
+
+plt.title('alpha distances travelled')
+plt.hist(rs, bins=80)
+plt.show()
+exit()
+#'''
+
 
 #adding poloniums stuck to pips. the gross number is as many radons as initialised in field region, the net number is half of that
 monopoloniums = np.array([])

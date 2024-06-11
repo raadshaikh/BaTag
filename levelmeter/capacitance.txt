@@ -1,0 +1,516 @@
+2023-10-24: level meter: L=0.3m, b=0.013/2m, a=0.012/2m
+
+Last edited at: 12023-11-11  00:34 - 6 months ago
+^that's what this said before i modified it on 2024-06-11 02:13 to change the plot code a bit
+
+height-capacitance line:
+######################################################
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.optimize as so
+L=30 #cm
+Co=208e-12 #F
+#x=np.array([23.5, 21, 18.5, 16, 13.5, 11, 8.5, 6, 3.5]) #cm
+#x=np.array([0,1.25,2.5,3.75,5,6.25,7.5,8.75,10,11.25,12.5,13.75,15,16.25,17.5,18.75,20,21.25]) #EtOH
+#x=np.array([0,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25])
+
+#x=np.array(range(20))
+#x=x*1.3
+#x=x+3
+#x = np.insert(x, 0, 0, axis=0)
+
+x=[29.,  27.5, 26.,  24.,  22.5, 21., 19.,  17.5, 16.,  13.5,  9.,   7.5,  6.,   4.5, -1. ] #LN2
+
+#x=x*1e-2 #m
+
+#y=np.array([72.90, 67.20, 56.80, 48.90, 41.50, 33.50, 25.80, 22.00, 15.10]) #uF
+#y=np.array([0.000245,0.313,1.323,1.978,3.93,5.43,6.03,6.96,7.42,8.65,9.32,10.13,10.61,12.03,12.54,13.84,14.27,15.14])
+#y=np.array([0.000245,116.7,286,418,556,681]) #h2o
+#y=np.array([0.26, 0.951, 1.462, 1.933, 11.38, 13.14, 15.51, 18.06, 39.2, 43.4]) #etoh again
+#y=np.array([268.40e-12, 538.83e-12, 748.83e-12, 1.54e-09, 1.75e-09, 2.11e-09, 2.37e-09, 2.79e-09, 2.98e-09, 3.15e-09, 4.01e-09, 4.16e-09]) #EtOH
+y=[2.846e-10, 2.783e-10, 2.698e-10, 2.708e-10, 2.656e-10, 2.604e-10, 2.560e-10, 2.505e-10, 2.437e-10, 2.432e-10, 2.333e-10, 2.291e-10, 2.220e-10, 2.181e-10, 2.049e-10] #LN2
+x=x[:len(y)]
+#y=y*1e-6 #F
+
+x=x[:]
+y=y[:]
+x=np.array(x)
+y=np.array(y)
+x=x-(1.33-0.5)
+x[x<0]=0
+
+myxerr=1.
+myyerr=1.87e-10*np.ones_like(y) #EtOH
+myyerr=[1.231e-11, 1.229e-11, 1.171e-11, 1.173e-11, 1.160e-11, 1.147e-11, 1.135e-11, 1.121e-11, 1.103e-11, 1.102e-11, 1.076e-11, 1.065e-11, 1.046e-11, 1.036e-11, 1.001e-11] #LN2
+
+#coef, V = np.polyfit(x,y,1, full=False, cov=True)
+def line(x,m,b):
+    return m*x+b
+init_guess=[2.6e-12, 208e-12]
+coef, V=so.curve_fit(line,x,y,init_guess, sigma=myyerr, absolute_sigma=True)
+poly1d_fn = np.poly1d(coef)
+
+residuals = y- line(x, *coef)
+ss_res = np.sum(residuals**2)
+ss_tot = np.sum((y-np.mean(y))**2)
+r_squared = 1 - (ss_res / ss_tot)
+
+print('slope, intercept: ', coef)
+print('fit cov: ', V)
+print('r^2: ', r_squared)
+print('dielectric constant: ', 1+(coef[0]*L/coef[1]), ' +/- ', ((0.1*coef[0]/coef[1])**2 + (V[0][0]**0.5*L/coef[1])**2 + (coef[0]*L*V[1][1]**0.5/coef[1]**2)**2)**0.5)
+
+plt.errorbar(x=x,y=y, fmt='yo',xerr=myxerr,yerr=myyerr)
+plt.plot(x, poly1d_fn(x), '--k')
+plt.xlabel('fluid height (cm)')
+plt.ylabel('capacitance (F)')
+plt.show()
+
+#why isn't this working? what am i doing wrong this time?
+#
+####################################
+
+
+My stupid thing:
+#################################### when frequency gets small C seems to shoot up, otherwise it's stable. so i'm guessing numerical instability in the arithmetic of the calculation method/formula
+#
+#
+import matplotlib.pyplot as plt
+
+#fs=[1e6, 1e6, 1e6, 100e3, 100e3, 100e3, 100e3, 50e3, 50e3, 50e3, 25e3, 25e3]
+#vcpps=[200, 100e-3, 72e-3, 345e-3, 305e-3, 254e-3, 226e-3, 380e-3, 356e-3, 338e-3, 520e-3, 502e-3]
+
+
+fs=[1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 1e3, 500, 250, 100, 50]
+vcpps=[30, 46, 82, 162, 282, 490, 800, 964, 964, 964, 956, 932]
+#vcpps=[178, 306, 568, 1150, 1630, 1860, 1960, 1950, 1950, 1950, 1950, 1930]
+
+for i in range(len(vcpps)):
+  vcpps[i]=vcpps[i]*1e-3
+
+def C(f, Vc_pp):
+  pi=3.14159265358979324
+  R=5.9e3
+  V_pp=2
+  V=V_pp/2
+  Vc=Vc_pp/2
+  Xc=(((1-(Vc/V)**2)/R**2)**(-1)-R**2)**0.5
+  C=(Xc*2*pi*f)**(-1)
+  return C
+
+from math import log10,floor
+
+numbers = []
+for i in range(len(fs)):
+  numbers.append(C(fs[i], vcpps[i]))
+    
+    
+def adjusted_scientific_notation(val,num_decimals=2,exponent_pad=2):
+    exponent_template = "{:0>%d}" % exponent_pad
+    mantissa_template = "{:.%df}" % num_decimals
+    
+    order_of_magnitude = floor(log10(abs(val)))
+    nearest_lower_third = 3*(order_of_magnitude//3)
+    adjusted_mantissa = val*10**(-nearest_lower_third)
+    adjusted_mantissa_string = mantissa_template.format(adjusted_mantissa)
+    adjusted_exponent_string = "+-"[nearest_lower_third<0] + exponent_template.format(abs(nearest_lower_third))
+    return adjusted_mantissa_string+"e"+adjusted_exponent_string
+
+plt.scatter(fs,numbers)
+plt.xscale('log')
+plt.yscale('log')
+plt.show()
+
+print('np.array([')
+for n in numbers:
+    print("{1: >10},".format(n,adjusted_scientific_notation(n)), end='')
+print('])')
+#
+#
+####################################
+
+
+Bode:
+#####################################
+#
+#
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.optimize as so
+
+R=5.9e3
+Cleads=96.327e-12
+
+height=22
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250]
+vcpps=[15,17,25,38,66,144,272,512,970,1180,1240,1240,1250,1240]
+vpps=[1800,2000,2020,2020,2000,2020,2020,2040,2040,2020,1940,1960,1940,1960]
+
+fs=fs[2:] #large frequency measurements were unreliably noisy
+vcpps=vcpps[2:] #so cut them out
+vpps=vpps[2:]
+
+height=max(0.1, height-(1.33-0.5))
+
+gains=[]
+for i in range(len(vcpps)):
+    gains.append(vcpps[i]/vpps[i])
+fs=np.array(fs)
+vcpps=np.array(vcpps)
+logfs=np.log(fs)
+loggains=np.log(gains)
+yerr = 0.1*np.ones_like(loggains) #assuming, like, 10% error in the v_out values
+
+def H(f,C,Rl):
+    return ((1+(R/Rl))**2+(2*np.pi*f*R*C)**2)**(-0.5)
+def logH(logf,C,Rl):
+    return np.log(H(np.exp(logf),C,Rl))
+
+init_guess=[(200+((5000-200)/30)*height)*1e-12, 1e5/height]
+popt, pcov=so.curve_fit(logH,logfs,loggains,init_guess,yerr,absolute_sigma=True)
+
+residuals = loggains- logH(logfs, *popt)
+ss_res = np.sum(residuals**2)
+ss_tot = np.sum((loggains-np.mean(loggains))**2)
+r_squared = 1 - (ss_res / ss_tot)
+
+Cfit=popt[0]
+Rlfit=popt[1]
+print('{:.3e}'.format(Cfit-Cleads))
+print('{:.3e}'.format(abs(Rlfit)))
+print(pcov)
+print(r_squared)
+
+smoothlogfs=np.linspace(min(logfs),max(logfs))
+Hs=H(fs,Cfit,Rlfit)
+logHs=logH(smoothlogfs,Cfit,Rlfit)
+
+roots=so.fsolve(lambda x: logH(x,Cfit,Rlfit)+0.5*np.log(2), logHs[0]-1*np.log((2*np.pi*R*Cfit))) #find where the bode plot equals log(1/sqrt2), i.e cutoff frequency
+print('\n',roots)
+logfcut=roots[0]
+print(1/(2*np.pi*R*np.exp(logfcut))) #C calculated from f_cut
+
+#plt.xscale('log')
+#plt.yscale('log')
+plt.xlabel('log(freq)')
+plt.ylabel('log(gain)')
+plt.scatter(logfs, loggains)
+plt.errorbar(logfs, loggains, yerr=yerr, fmt='yo')
+plt.plot(smoothlogfs,logHs, '--k')
+plt.show()
+#
+#
+###################################
+
+
+R_leak:
+###################################
+#
+#
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+x=[2.5,3.75,5,6.25,7.5,8.75,10,11.25,20]
+Rls=[37e3, 25e3, 20e3, 16e3, 14e3, 12e3, 11e3, 10e3, 9e3]
+x=np.array(x)
+Rls=np.array(Rls)
+Rls=Rls/1e3
+y=1e2/x
+plt.scatter(x,Rls)
+plt.plot(x,y,color='orange')
+plt.xlabel('fluid height (cm)')
+plt.ylabel('resistance of capacitor (kOhm)')
+plt.show()
+#
+#
+###################################
+
+Bode plot for LN2
+######################################
+#
+#
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.optimize as so
+
+R=5.9e3
+Cleads=96.327e-12
+
+unheights=np.array([0,1.5,3,5,6.5,8,10,11.5,13,15.5,20,21.5,23,24.5,30])
+unheights=1+unheights
+heights=30-unheights
+height=heights[13]
+fs=[1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250, 100]
+raw=[198,2080, 362,2080, 684,2100, 1370,2100, 1770,2100, 2000,2080]
+vcpps=[]
+vpps=[]
+for i in range(int(len(raw)/2)):
+    vcpps.append(raw[2*i])
+    vpps.append(raw[2*i+1])
+
+fs=fs[:len(vpps)]
+
+height=max(0.1, height-(1.33-0.5))
+
+gains=[]
+for i in range(len(vcpps)):
+    gains.append(vcpps[i]/vpps[i])
+fs=np.array(fs)
+vcpps=np.array(vcpps)
+vpps=np.array(vpps)
+vcpperrs=vcpps*0.05
+vpperrs=vpps*0.03
+logfs=np.log(fs)
+loggains=np.log(gains)
+loggainerrs=np.power(np.power(np.divide(vcpperrs,vcpps),2)+np.power(np.divide(vpperrs,vpps),2) ,0.5)
+
+
+def H(f,C):
+    return (1**2+(2*np.pi*f*R*C)**2)**(-0.5)
+def logH(logf,C):
+    return np.log(H(np.exp(logf),C))
+
+Co=200
+init_guess=[(Co+((1.5*Co-Co)/30)*height)*1e-12]
+popt, pcov=so.curve_fit(logH,np.float64(logfs),np.float64(loggains),init_guess, sigma=np.float64(loggainerrs), absolute_sigma=True)
+Cfit=popt[0]
+#Rlfit=popt[1]
+stderr = np.sqrt(np.diag(pcov))
+print('{:.3e}'.format(Cfit-Cleads))
+print('{:.3e}'.format(stderr[0]))
+
+smoothlogfs=np.linspace(min(logfs),max(logfs))
+Hs=H(fs,Cfit)
+logHs=logH(smoothlogfs,Cfit)
+
+'''
+roots=so.fsolve(lambda x: logH(x,Cfit,Rlfit)+0.5*np.log(2), logHs[0]-1*np.log((2*np.pi*R*Cfit))) #find where the bode plot equals log(1/sqrt2), i.e cutoff frequency
+print(roots)
+logfcut=roots[0]
+print(1/(2*np.pi*R*np.exp(logfcut))) #C calculated from f_cut
+'''
+
+#plt.xscale('log')
+#plt.yscale('log')
+plt.xlabel('log(freq)')
+plt.ylabel('log(gain)')
+plt.scatter(logfs, loggains)
+plt.plot(smoothlogfs,logHs, color='orange')
+plt.show()
+#
+#
+#####################################
+
+23.5 cm -2.5cm each step
+
+72.9e-6
+67.2
+56.8
+48.9
+41.5
+33.5
+25.8
+22.0
+15.1
+7.6
+1.5
+0.2
+
+life is suffering
+
+
+
+
+0 to whatever, 1.25 cm increments
+uF
+0.000245
+0.313
+1.323
+1.678
+4.93
+5.43
+6.03
+6.96
+7.42
+8.65
+9.32
+10.13
+10.61
+12.03
+12.54
+13.84
+14.27
+15.14
+
+Water (2.5cm)
+0.245e-9
+116.7e-6
+286
+418
+556
+681
+
+Ethanol (2.5cm) (discharging each time)
+0.248e-9
+Just touched the surface and took it out, 
+there shouldn't be any etoh in there, 
+but stuck at 2-5 uF!
+I don't know how to use this meter
+MM reads 1.4-1.5 DC, 0.53-0.86 AC on ranges 200u-2u.
+Capacitance reads _01.6, _0.62, _.284 on these ranges
+Anyways, starting from basically 0cm again:
+0.260e-6 (2u)
+0.951
+1.462
+1.933
+11.38 (20u)
+13.14
+15.51
+18.06
+39.2 (200u)
+43.4
+(removed) 1.3, 0.61, 0.019 (200, 20, 2u)
+
+Ethanol adding to beaker
+0.242n
+
+2023-11-02
+frequency-gain plots for different fluid heights (raw is frequency-vpp)
+
+empty leads:
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3]
+vcpps=[126,242,550,1010,1490,1830,2000,2010,2020]
+vpps=[1810,2000,2040,2040,2020,2030,2020,2020,2030]
+
+820pf ref capacitor:
+fs=[1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000]
+vcpps=[69,134,258,600,1090,1560,1980,2000]
+
+level meter in air:
+height=0.1
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000]
+vcpps=[42,82,184,354,672,1310,1720,1940,2010,2010,1940,1940]
+vpps=[1810,1980,2040,2040,2020,2010,2010,2010,2020,2020,1960,1960]
+
+200ml:
+height=2.5
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250]
+vcpps=[22,35,81,150,290,664,1150,1490,1690,1720,1690,1700,1700,1700]
+vpps=[1800,1990,2030,2030,2000,2030,2020,2020,2020,2000,1960,1960,1950,1960]
+
+300ml:
+height=3.75
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250, 100]
+vcpps=[18,38,64,126,236,546,970,1340,1570,1610,1590,1590,1580,1580,1580]
+vpps=[1900,2000,2040,2040,2010,2020,2000,2010,2010,2010,1960,1960,1940,1960,1940]
+
+400ml:
+height=5
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250, 100]
+vcpps=[18,25,55,102,200,460,850,1210,1470,1540,1500,1500,1520,1520,1520]
+vpps=[1810,2000,2040,2020,2020,2010,2010,2010,2020,2020,1960,1960,1960,1960,1960]
+
+500ml:
+height=6.25
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250, 100]
+vcpps=[18,24,48,90,168,400,704,1100,1390,1450,1440,1440,1460,1440,1440]
+vpps=[1820,2000,2030,2030,2000,2020,2020,2010,2000,2000,1960,1960,1960,1960,1950]
+
+600ml:
+height=7.5
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250]
+vcpps=[15,22,42,82,146,342,628,1020,1320,1390,1380,1360,1370,1360]
+vpps=[1810,1970,2030,2030,2010,2000,2000,2000,2010,2040,1950,1960,1960,1950]
+
+700ml:
+height=8.75
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500]
+vcpps=[14,20,40,69,132,306,568,940,1250,1330,1310,1330,1320]
+vpps=[1800,1960,2010,2020,2000,2010,2030,2010,20220,2010,1960,1960,1960]
+
+800ml:
+height=10
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500]
+vcpps=[18,21,37,64,120,276,520,880,1190,1270,1260,1270,1280]
+vpps=[1800,2000,2000,2020,2030,2000,2010,2000,2030,2030,1960,1950,1960]
+
+900ml:
+height=11.25
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500]
+vcpps=[14,18,32,58,110,260,478,825,1150,1220,1230,1230,1240]
+vpps=[1800,1980,2020,2040,2000,2000,2000,2000,2020,2010,1980,1960,1960]
+
+1000ml:
+height=12.5
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000]
+vcpps=[13,32,54,100,232,440,728,1100,1190,1180,1200,1200]
+vpps=[1810,2010,2040,2020,2010,2010,2000,2020,2020,2040,1960,1960]
+
+22cm:
+height=22
+fs=[5e6, 2.5e6, 1e6, 500e3, 250e3, 100e3, 50e3, 25e3, 10e3, 5e3, 2500, 1000, 500, 250]
+vcpps=[15,17,25,38,66,144,272,512,970,1180,1240,1240,1250,1240]
+vpps=[1800,2000,2020,2020,2000,2020,2020,2040,2040,2020,1940,1960,1940,1960]
+
+gain is <1 at ~DC, especially with increasing fluid. Leaky capacitor? Yes, the resistance of the capacitor goes down to like 5 kOhm at the 1000ml mark. Try and model this with formulas
+100ml is 1.25cm
+
+finally!
+heights=[0.1,2.5,3.75,5,6.25,7.5,8.75,10,11.25,12.5,20]
+Cs=[208e-12, 625e-12, 796e-12, 970e-12, 1.15e-9, 1.325e-9, 1.493e-9, 1.642e-9, 1.823e-9, 0.946e-9, 3.108e-9]
+Rls=[1.7e12, 37e3, 25e3, 20e3, 16e3, 14e3, 12e3, 11e3, 10e3, 9e3, 10e3]
+
+
+#ln2
+
+x=1cm, b=5cm, c=1.5cm. height not covered by LN2
+
+x
+152,2100, 292,2100, 564,2080, 1200,2080, 1650,2080, 1940,2080, 2060,2010, 2060,2010, 1980,2020, 2000,2000
+
+xc
+156,2080, 296,2100, 570,2100, 1210,2100, 1670,2100, 1980,2100, 2080,2080
+
+xcc
+160,2080, 302,2080, 580,2080, 1210,2100, 1670,2080, 1960,2080, 2060,2100, 2080,2120
+
+xb
+160,2100, 302,2100, 580,2100, 1230,2060, 1670,2100, 1960,2100, 2060,2100, 2080,2080
+
+xbc
+160,2100, 308,2100, 590,2080, 1240,2080, 1690,2100, 1960,2100, 2060,2080, 2080,2080
+
+xbcc
+162,2100, 310,2080, 596,2080, 1260,2080, 1690,2100, 1960,2100, 2080,2080
+
+xbb
+164,2080, 312,2080, 604,2080, 1250,2080, 1700,2080, 1980,2100, 2060,2100
+
+xbbc
+166,2080, 320,2080, 612,2100, 1260,2060, 1710,2100, 2000,2100, 2080,2080
+
+xbbcc
+170,2080, 324,2080, 616,2060, 1280,2080, 1700,2080, 1980,2080, 2060,2100, 2080,2080
+
+xbbccc
+172,2100, 326,2080, 624,2100, 1280,2080, 1710,2080, 1980,2080, 2080,2080
+
+xbbbb
+176,2100, 336,2080, 644,2100, 1300,2060, 1720,2100, 1980,2100, 2080,2080
+
+xbbbbc
+180,2080, 338,2080, 648,2100, 1300,2080, 1730,2100, 2000,2080, 2080,2080
+
+xbbbbcc
+190,2080, 340,2080, 650,2080,  1310,2100, 1730,2100, 2000,2080
+
+xbbbbccc
+192,2080, 350,2100, 656,2080, 1310,2100, 1740,2100, 1980,2080
+
+Taken out
+198,2080, 362,2080, 684,2100, 1370,2100, 1770,2100, 2000,2080
+
+heights=[29.  27.5 26.  24.  22.5 21.  19.  17.5 16.  13.5  9.   7.5  6.   4.5 -1. ]
+Cs=[2.846e-10, 2.783e-10, 2.698e-10, 2.708e-10, 2.656e-10, 2.604e-10, 2.560e-10, 2.505e-10, 2.437e-10, 2.432e-10, 2.333e-10, 2.291e-10, 2.220e-10, 2.181e-10, 2.049e-10]
+Cerrs=[inf, 1.22876386e-11, 1.171e-11, 1.173e-11, 1.160e-11, 1.147e-11, 1.135e-11, 1.121e-11, 1.103e-11, 1.102e-11, 1.076e-11, 1.065e-11, 1.046e-11, 1.036e-11, 1.001e-11]

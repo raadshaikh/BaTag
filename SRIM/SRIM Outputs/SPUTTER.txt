@@ -17,7 +17,7 @@
  =                  Cosine (Y) and Cosine (Z) are transverse motion. =
  =====================================================================
  ==================  CALCULATION   DATA  =============================
-  Calculation Date= 06-05-2024, Time= 13:56:03
+  Calculation Date= 06-11-2024, Time= 17:03:26
   Ion Data: Name,   Mass,   Energy (keV)
            He    4.003 5600.
   Displacement Energy of Ar = 5.00000 eV

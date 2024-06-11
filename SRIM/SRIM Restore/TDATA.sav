@@ -7,30 +7,30 @@ TRIM  Version  Number  /  Calculation Name
 ION DATA:At.Numb, Mass(amu), Energy (keV) , Angle to Target
           2     4.0030  5.6000E+03    00.0
 ION NUMB: Current, Total, AutoSave, Transmitted, Backscattered 
-        10000 10000  10000    0    0
+        5000 0  10000    0    0
 CURRENT ION: Energy(eV),  Depth (X,Y,Z), Trajectory: Cos(X,Y,Z), Sin(X)
-8.00322E-01 6.75696E+08 4.90476E+06 3.25683E+07 -0.482119 0.584204 0.652891 0.876106
+8.18088E-01 3.89305E+08 -1.16509E+07 -4.60381E+06 0.612622 -0.384664 -0.690455 0.790376
 ION AVGS:  Range,      Straggling,   Vacancies/Ion
-        6.6618E+08   1.4504E+07   7.7947E+02
+        3.8770E+08   8.4676E+06   7.7192E+02
 ION SUMS:  Range,Straggling,(Vacancies,Replacements,Interstitials)/Ang.
-6.66178E+012  4.44003E+021  2.96003E+030  1.97378E+039  8.66080E-001  0.00000E+000  0.00000E+000  0.00000E+000
+1.93852E+012  7.51932E+020  2.91730E+029  1.13205E+038  4.82453E-001  0.00000E+000  0.00000E+000  0.00000E+000
 Ion Y-Z Lateral Data :  Range, Straggling, Kurtosis, Radial Dev.
-1.62901E+011  5.18910E+018  2.54734E+011  1.02451E+019
-2.54734E+007  1.93809E+007  1.62901E+007  2.27796E+007  1.50155E+002
+4.74429E+010  8.67313E+017  7.39587E+010  1.73792E+018
+1.47917E+007  1.13485E+007  9.48858E+006  1.31705E+007  9.73263E+001
 Cascade Type, FileFLAGS: Sputter, Ranges, Backscatter, Transmit, Collisions, Random Seeds(2)
-  1 1 1 1 0 1 1 1546967119 133268856
+  1 1 1 1 0 1 1 1019364414 1155356102
 TGT DATA: ------- Numb.Elements, Numb.Layers -----------------
                        1           1
 TGT DATA: Atomic Numb, Mass,  Disp., Binding, Surf. Energy(eV)
  18           39.9480       5.00          1.00          2.00
 TGT Layers: Name      Width(A),    Depth(A), Density(g/cm3), Stoichiometry (Tgt.Atoms)
-    "Layer 1" 9.0000E+08    9.0000E+08    1.1500E-03 1.00000E+00
+    "Layer 1" 8.0000E+08    8.0000E+08    1.9764E-03 1.00000E+00
 Lowest E,  Ed(min)  (eV)
  1             5 
 Total Sputtered Atoms and Energy (eV)     (Target Atoms 1 - 1  )
     0.000E+000 0.000E+000 
 Plot Display Start Depth (A), End Depth(A), Depth Resolution (Ang.)
- 0             900000000     9000000 
+ 0             800000000     8000000 
 Plotting Colors from TRIM.CFG
  16777215      255           6             16777215      255           16777215      16777215      16777215      255           8388608       65280         16776960 
  16777215  4227327  15982183  16744703  16777088  13159423  16760769  8421376  6422724  8388736  4755857  9408399  16777215 
