@@ -17,9 +17,9 @@
  =                  Cosine (Y) and Cosine (Z) are transverse motion. =
  =====================================================================
  ==================  CALCULATION   DATA  =============================
-  Calculation Date= 06-11-2024, Time= 17:03:26
+  Calculation Date= 06-17-2024, Time= 22:25:03
   Ion Data: Name,   Mass,   Energy (keV)
-           He    4.003 5600.
+           Po    209.983 100.
   Displacement Energy of Ar = 5.00000 eV
   Latt.Binding Energy of Ar = 1.00000 eV
   SurfaceBind. Energy of Ar = 2.00000 eV
@@ -28,4 +28,8 @@
 =  Column #1: S= Sputtered Atom, B= Backscattered Ion, T= Transmitted Ion.   =
 =  Col.#2: Ion Number, Col.#3: Z of atom leaving, Col.#4: Atom energy (eV).  =
 =  Col.#5-7: Last location:  X= Depth into target, Y,Z= Transverse axes.     =
-=  Col.#8-10: 
+=  Col.#8-10: Cosines of final trajectory.                                   =
+= *** This data file is in the same format as TRIM.DAT (see manual for uses).=
+====== TRIM Calc.= Po(100 keV) ==> Layer 1(  80 mm) ==========================
+ Ion  Atom   Energy        Depth       Lateral-Position        Atom Direction      
+ Numb Numb    (eV)          X(A)        Y(A)       Z(A)      Cos(X)  Cos(Y) Cos(Z) 

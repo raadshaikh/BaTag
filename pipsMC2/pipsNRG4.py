@@ -3,6 +3,7 @@ import pickle
 import matplotlib.pyplot as plt
 import scipy.stats as ss
 import scipy.signal as ssig
+from srim.output import Collision
 
 def save(filename, *args):
     # Get global dictionary
@@ -76,7 +77,7 @@ version=6
 dt=1
 # timesteps=int(3*60*60/dt)
 timesteps=9500
-timesteps2=25000 #see following comment.
+timesteps2=9500 #see following comment.
 if manual_adjustments == True:  timesteps=25000 #to make manual adjustments, keep the pool of possible datapoints large to choose from
 conditions='deflection'
 if isPlated:    load('pipsMC{}_output_{}_noions_plated'.format(version,timesteps))
@@ -230,12 +231,12 @@ def alpha_energies(init_E, medium='argon'):
         alpha_energies[i]=alpha_energy
     return alpha_energies
 
-#'''
+'''
 ##temporary: make a plot of this
 plt.plot(lengths[alpha_energies(Rn222Q)>0], alpha_energies(Rn222Q)[alpha_energies(Rn222Q)>0])
 plt.show()
 exit()
-#'''
+'''
 
 #the pipsMC#.py simulation gave a list of lengths the alphas had to go through, now we plug these into ASTAR data to get a list of energies the alphas will have when hitting the detector
 MC_energies_detected=np.interp(MC_distances, lengths, alpha_energies(Rn222Q))
@@ -256,7 +257,7 @@ plt.ylabel('cumulative probability')
 plt.show()
 exit()
 '''
-#'''
+'''
 ###temporary: finding out where the successful radon alphas are coming from
 range=np.max(MC_distances[MC_energies_detected>0])
 print('range of radon alphas in {} bar Ar = '.format(pressure_detector), range)
@@ -281,7 +282,32 @@ plt.title('alpha distances travelled')
 plt.hist(rs, bins=80)
 plt.show()
 exit()
+'''
 #'''
+##temporary: plot energy straggle as function of penetration depth
+coll = Collision('C:/Users/Fujitsu/Raad/BaTag/SRIM/SRIM Outputs')
+depth=3.75 #cm
+
+energyhist=np.array([])
+for i in range(5000):
+    print('%04d' % i, end='\r')
+    depths=np.array([])
+    energies=np.array([])
+    for site in coll.__getitem__(i)['collisions']:
+        depths=np.append(depths, site['depth']*1e-8)
+        energies=np.append(energies, site['kinetic_energy'])
+    energyhist=np.append(energyhist, np.interp(depth, depths, energies))
+energyhist=energyhist[energyhist>(np.median(energyhist)-4*np.std(energyhist))]
+plt.hist(energyhist, bins=80, density=True)
+x=np.linspace(np.mean(energyhist)-3.5*np.std(energyhist),np.mean(energyhist)+3.5*np.std(energyhist), 2**13)
+p=ss.norm.pdf(x,np.mean(energyhist),np.std(energyhist))
+plt.plot(x,p, label='({:.2f} $\\pm$ {:.2f}) keV'.format(np.mean(energyhist),np.std(energyhist)))
+plt.legend()
+plt.title('energy straggle for Rn222 $\\alpha$\'s in {} bar Ar at {} cm depth'.format(pressure_detector, depth))
+plt.show()
+exit()
+#'''
+
 
 
 #adding poloniums stuck to pips. the gross number is as many radons as initialised in field region, the net number is half of that
