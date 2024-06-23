@@ -72,6 +72,7 @@ manual_adjustments = True
 mono_adjustments=False
 isPlated=True
 shuffle = True
+conditions='deflection'
 
 version=6
 dt=1
@@ -79,20 +80,19 @@ dt=1
 timesteps=9500
 timesteps2=9500 #see following comment.
 if manual_adjustments == True:  timesteps=25000 #to make manual adjustments, keep the pool of possible datapoints large to choose from
-conditions='deflection'
 if isPlated:    load('pipsMC{}_output_{}_noions_plated'.format(version,timesteps))
 else:   load('pipsMC{}_output_{}_noions'.format(version,timesteps))
 load('integrated_activities_50000')
 
 # '''
-volume=905142
+volume=905142 #mm^3
 total_volume=3.3e6
 #values of various species to manually set so as to match the data.
 #this is for reverse-field conditions
 if conditions == 'reverse':
     n_Rn222s = int(Rn222AiIt[timesteps2]*0.00123*volume/total_volume) #integrated activity * volume fraction = initial radon decays, and 0.00122 is an efficiency of hitting the detector that i got by averaging some cases
     n_ambientPo218s = int(((n_Rn222s/0.00123)*Po218AiIt[timesteps2]/Rn222AiIt[timesteps2])*0.00123) #0.0005 is efficiency of hitting the detector. different between Rn and Po because Rn has the advantage of being able to start in the field region which has a nice view of the PIPS
-    #see comment in pipsMC6: poloniums aren't neutralised so they need to be considered from the field region too
+    #see comment in pipsMC6: poloniums are eventually neutralised so they need to be considered from the field region too
     n_ambientPo214s = int(((n_Rn222s/0.00123)*Po214AiIt[timesteps2]/Rn222AiIt[timesteps2])*0.00123)
     n_monoPo218s = 0
     n_monoPo214s = int(n_monoPo218s*Po214AiIt[timesteps2]/Po218AiIt[timesteps2])
@@ -109,14 +109,14 @@ sigma_fudge = 1
 if True: #further manual finetuning on top of the existing manual adjustments. i don't want to make another variable to easily switch this so i'll just put it in a block like this
     if conditions == 'reverse':
         n_Rn222s *= 1.0
-        n_ambientPo218s *= 1.1
-        n_ambientPo214s *= 1.1
-        n_plated218 = 50
-        n_plated214 = 50
-        n_monoPo218s = 140
+        n_ambientPo218s *= 1.0
+        n_ambientPo214s *= 1.0
+        n_plated218 = 90*0
+        n_plated214 = int(n_plated218*Po214AiIt[timesteps2]/Po218AiIt[timesteps2])
+        n_monoPo218s = 140*0
         n_monoPo214s = int(n_monoPo218s*Po214AiIt[timesteps2]/Po218AiIt[timesteps2])
         n_monoPo214s *= 0.5
-        t_monoPo210s *= 0.5
+        t_monoPo210s *= 0.0
         sigma_fudge *= 1.0
     elif conditions == 'deflection':
         n_Rn222s *= 1.0
@@ -124,9 +124,9 @@ if True: #further manual finetuning on top of the existing manual adjustments. i
         n_ambientPo214s *= 1.0
         n_plated218 = 0
         n_plated214 = 0
-        n_monoPo218s *= 0.4
-        n_monoPo214s *= 0.5
-        t_monoPo210s *= 0.5
+        # n_monoPo218s *= 0.4
+        # n_monoPo214s *= 0.5
+        t_monoPo210s *= 0.4
         sigma_fudge *= 1.0
     elif conditions == 'transfer':
         n_Rn222s *= 1.0
@@ -136,10 +136,10 @@ if True: #further manual finetuning on top of the existing manual adjustments. i
         n_plated214 = 0
         n_monoPo218s *= 0.55
         n_monoPo214s *= 0.75
-        t_monoPo210s *= 0.5
+        t_monoPo210s *= 0.4
         sigma_fudge *= 1.0
 # '''
-n_bins=100
+n_bins=80
 
 n_Rn222s = int(n_Rn222s)
 n_ambientPo218s = int(n_ambientPo218s)
@@ -189,7 +189,7 @@ astar=np.loadtxt('AR_apdata.pl.txt') #data table from ASTAR
 energies=astar[:,0]
 dEdxs_AR=astar[:,1]
 if conditions == 'reverse': pressure_detector, pressure_source = 0.9, 1.4
-if conditions == 'deflection': pressure_detector, pressure_source = 1.3, 1.4
+if conditions == 'deflection': pressure_detector, pressure_source = 0.9, 1.4
 if conditions == 'transfer': pressure_detector, pressure_source = 0.9, 1.4
 densityAr_detector=0.0016448*pressure_detector #g/cc #at 19 deg C
 densityAr_source=0.0016448*pressure_source
@@ -283,7 +283,7 @@ plt.hist(rs, bins=80)
 plt.show()
 exit()
 '''
-#'''
+'''
 ##temporary: plot energy straggle as function of penetration depth
 coll = Collision('C:/Users/Fujitsu/Raad/BaTag/SRIM/SRIM Outputs')
 depth=3.75 #cm
@@ -306,7 +306,7 @@ plt.legend()
 plt.title('energy straggle for Rn222 $\\alpha$\'s in {} bar Ar at {} cm depth'.format(pressure_detector, depth))
 plt.show()
 exit()
-#'''
+'''
 
 
 
@@ -386,7 +386,7 @@ if conditions == 'reverse':
     expdata = np.loadtxt('reverse2.2_hist.txt')
 if conditions == 'deflection':
     expdata = np.loadtxt('deflection1.2_hist.txt')
-calibrator = np.mean(expdata[expdata>160])/15.2 #calibration peak is centred at 170, which from diagram is about 15.3 MeV. so divide by about 11
+calibrator = np.mean(expdata[expdata>160])/15.35 #calibration peak is centred at 170, which from diagram is about 15.3 MeV. so divide by about 11
 expdata = expdata/calibrator
 sigma = np.std(expdata[expdata>10]) #finding width of calibration peak to use to convolve simulation results appropriately
 expdata = expdata[expdata<10] #cutting out calibration peak
@@ -403,20 +403,27 @@ def FDbins(v):  #Freedman-Diaconis bins rule
     except:
         return 1
 
+
+
+fig, ax = plt.subplots(2, 1, gridspec_kw={'height_ratios': [9, 1]})
+fig.set_tight_layout(True)
+
 # np.random.seed(1)
 B = np.random.normal(0,sigma_fudge*sigma,2**22)
-save('gaussian_{}'.format(sigma_fudge*sigma), 'B')
+# save('gaussian_{}'.format(sigma_fudge*sigma), 'B')
 # exit()
 load('gaussian_{}'.format(sigma_fudge*sigma))
 #plotting simulated results
 C_edges, C_heights, step = hist_of_addition(MC_energies_detected, B, bins=n_bins, plot=False)
-# plt.bar(C_edges[:-1], C_heights, step, color='orange', alpha=0.8, label='simulation')
+# plt.bar(C_edges[:-1], C_heights, step, color='orange', alpha=0.8, label='simulation_oldconvolve')
 #plotting experimental results
 bins = C_edges-0.5*step
 # save('bins_{}'.format(conditions),'bins')
-# load('bins_{}'.format(conditions))
-plt.hist(expdata, bins=bins, color='blue', alpha=0.3, label='experiment')
-plt.hist(convolved, bins=bins, color='red', alpha=0.4, label='simulation 2')
+load('bins_{}'.format(conditions))
+plt.subplot(2,1,1)
+nexp, binexp, patches = plt.hist(expdata, bins=bins, color='blue', alpha=0.5, label='experiment')
+nsim, binsim, patches = plt.hist(convolved[convolved>=0], bins=bins, color='orange', alpha=0.6, label='simulation')
+
 
 plt.xlim((-0.5,8.5))
 # if conditions == 'reverse': plt.ylim((0,44))
@@ -427,4 +434,17 @@ plt.ylabel('counts')
 plt.title('{}-field run'.format(conditions))
 plt.legend()
 # plt.savefig('{}_{}_detectedenergies_{}.png'.format(version,conditions,timesteps), bbox_inches='tight')
+
+# t_values = np.abs((nexp-nsim))/np.power(nexp+nsim, 0.5)
+p_values=np.zeros_like(nexp)
+for i in range(len(nexp)):
+    p_values[i] = ss.poisson_means_test(nexp[i],timesteps2,nsim[i],timesteps2).pvalue
+plt.subplot(2, 1, 2, sharex=ax[0])
+plt.bar(bins[:-1], 100*(1-p_values), bins[1]-bins[0])
+plt.axhline(y=95, color='r', linestyle='-', linewidth=1)
+plt.axhline(y=90, color='pink', linestyle='--', linewidth=1)
+plt.ylabel('significance')
+plt.ylim((85,100))
+
+
 plt.show()

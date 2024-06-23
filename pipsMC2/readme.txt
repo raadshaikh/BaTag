@@ -9,6 +9,7 @@ pipsMC6: separating po218 and po214, and adding po210. this will go to pipsNRG4 
 actually i just realised that the poloniums don't need to be separated in the code. now that i think about it radon didn't need to be separated like that either but i guess it's just stuck like that now
 
 pipsNRG#.py (use the latest) reads the previously mentioned output file, computes energies based on stopping power, and generates a plot of the expected energy spectrum histogram.
+pipsNRG4 has options for manual fine-tuning of how many events of each kind are to be detected.
 
 
 So basically run pipsMC5.py and then pipsNRG3.py. (or 6 and 4 now)
