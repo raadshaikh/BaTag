@@ -1,0 +1,13 @@
+dC=myyerr[5]
+h=x[5]
+C=y[5]
+# dC=C*0.01
+C0=Co
+dC0=C0*0.05
+dL=0.1
+kl=1+(coef[0]*L/coef[1])
+dkl=((0.1*coef[0]/coef[1])**2 + (V[0][0]**0.5*L/coef[1])**2 + (coef[0]*L*V[1][1]**0.5/coef[1]**2)**2)**0.5
+dh=h*( (dL/L)**2 + (dC/(C-C0))**2 + ((C/C0)**2)*(dC0/(C-C0))**2 + (dkl/(kl-1))**2 )**0.5
+print(dh)
+print(100*dh/h)
+print(100*myxerr/h)

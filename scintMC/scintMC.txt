@@ -1,0 +1,145 @@
+2024-01-18
+
+what is xy plane? and z-axis?
+make a cuboidal bounding box around the assembly. volume doesn't matter since we are concerned with radon number density (intensive).
+
+generate a random point and a random direction (homogenous, isotropic). This represents the scintillation photon(s?) from one decay event?
+the initial cone veto is a lot more complicated here for the teflon cylinder, so never mind.
+use ray-triangle algorithm to find all intersection points between the ray and triangles of the assembly.
+pick out the closest intersection (i.e. the first and only one the photon actually hits) and see if it corresponds to the teflon cylinder (falls within an analytically simple-to-describe volume).
+if yes, the ray passes.
+make a million rays from the same point, see how many pass. this gives the success fraction/solid angle from that point's point of view.
+do this for a grid of points in the bounding box so we have a scalar field of probability. (what's the best way to store a field like this in python?)
+once this is precomputed, for a simulation, we can just look up the success probability for any point and correspondingly decide whether a photon from there would or would not hit the teflon successfully.
+
+SCRATCH THAT don't precompute a probability field, just do a direct MC like last time. restrict the region of interest to the interior of the teflon cylinder.
+
+my bounding box is 81.144 cc
+
+
+
+detected photons/generated photons is (0.5*0.6*) 7/500000 or 3/250000 or ?/300000
+which is (4 +/- 0.3)e-6. but multiply by volume (81144cc) so you normalize for density: 0.3246 +/- 0.0243 (detected photons per density of generated photons)
+
+plqy wavelength dependance
+
+do a super rough estimate of how much energy is deposited in the relevant region and how many photons it'll produce
+
+simplest ideal case: make one radon decay on the middle of the pips producing an alpha going straaight up, then how many photons are produced and then detected?
+simulation: number of blue photons detected/number of uv photons produced by decay over the whole 6.5cm: 1/121833, or 1/243674, or 5/344605, or 7/487358
+multiply all these values by 0.5*0.6 !!!
+
+Rn decay actually produces 5.5904M/67.9 = 82333 photons. So at most, accounting for everything, 0.2027 or 0.10136 or 0.35838 or 0.35477 photons will be detected for this one decay.
+which is 0.2888 +/- 0.1084
+
+487358(from decay)-181886(from teflon)-7(to sipm)
+equivalent to 82333-30727-1.18
+
+#########################################
+import matplotlib.pyplot as plt
+import numpy as np
+
+a=np.array([0.04456018518, 0.04740547839, 0.03465, 0.003125, 0.018666666, 0.028766666, 0.01089891975308642, 0.006558641975308642, 0.006714876033057851, 0.019145447530864196, 0.02271412037037037, 0.0076904296875, 0.0072021484375, 0.01806640625, 0.03323333333, 0.0661])
+b=np.array([162, 162, 200, 128, 150, 150, 81, 81, 121, 162, 162, 64, 128, 128, 200, 250])
+c=np.array([256, 256, 200, 25, 150, 200, 128, 64, 64, 128, 128, 128, 64, 128, 150, 200])
+
+a=np.array([])
+b=np.array([])
+c=np.array([])
+
+d=b*c
+
+a=100*np.array(a)
+print(np.mean(a),'%')
+print(np.std(a))
+print(np.std(a)/(len(a)**0.5))
+
+plt.scatter(d, a)
+plt.show()
+############################################
+import numpy as np
+def comb(v, w):
+    m=np.dot(v,w)/np.sum(w)
+    e=np.std(v)
+    return m, e
+
+v1=np.array([0.2027, 0.10136, 0.35838, 0.35477])
+w1=np.array([121833, 243674, 344605, 487358])
+
+v2=0.5*0.6*np.array([7/500000, 3/250000])
+w2=np.array([500000, 250000])
+
+m1, e1=comb(v1,w1)
+m2, e2=comb(v2,w2)
+
+volume=81144
+print(m1, '+/-', e1)
+print(m2*volume, '+/-', e2*volume)
+#################################################
+if (UV) photons spawned everywhere with a density of 1 per cc, each sipm would see about 0.3246 +/- 0.0243 (blue) photons 
+ 
+if a radon sitting in the middle of the pips decayed and released an alpha going straight upward, it would produce 82333 photons over 6.5 cm, and each sipm would detect 0.26 +/- 0.10 photons
+
+--------
+
+trying with teflon shifted up by 42mm. new bounding box volume 77616 mm^3. 
+option1: 250000-14097-7
+option2: suppose a radon decay makes 278487 uv photons (path length=7, 'big'=15). then 7480 hit teflon and 4 hit sipm. Or 278487-7586-4 (= 82333-2243-1.18)
+or (taking 'big'=16): 556982-14817-5, or 556982-
+
+https://files.catbox.moe/5wmqzh.png
+
+long, shifted teflon:
+option1:
+option2: 278487-142370-12 or 278487-142754-13 (= 82333-42204-3.84)
+
+https://files.catbox.moe/amjiij.png
+
+angle dependence of sipm efficiency
+(the surface is covered with some sio2, angle of attack might cause some reflection or attenuation or whatever, maybe other effects of angle at surface)
+so do literature search on this. onsemi, sensl, hamamatsu white papers, arxiv
+
+https://files.catbox.moe/lbx2n5.png
+
+generate histograms based on where exactly the photons hit the teflon. eg for cut:https://files.catbox.moe/iyezs4.png
+
+I'm stupid, scratch all earlier results!!!!!!!!!! (note to self: from now on, when doing this, describe what exactly makes me stupid. future me is morbidly curious)
+cut: 278487-48535-0, 556982-96691-1
+cut_shift: 278487-69362-0, 556982-139060-0
+cut_shift_long: 278487-195060-0, 556982-390943-0
+cut_long_cent: 556982-339521-0
+
+Directly coat sipm, then out of 82333, 172 fall on sipm, about 128 when accounting for angle, 38 when accounting for tpb yield and quantum efficiency
+or 118 and 36 when also accounting for sipm efficiency dropping with angle
+get an estimate for the error bar on these
+Another mistake I've been making:
+the cos^2-ish thing is tpb reemission. which is then fed into the sipm.
+https://arxiv.org/pdf/2108.08239.pdf (fig 9)
+http://grattalab3.stanford.edu/neutrino/Publications/Inst._15_P01019.pdf (fig 14)
+look up effect of angle of attack of uv photons on the tpb! for now assuming it's irrelevant
+final figure for counts per decay (82333 initial photons, two angle effects, 0.5 qe * 0.6 plqy):
+original geometry: 23.11 +/- 1.19 (N=8)
+eviscerated geometry: 45.79 +/- 1.18 (N=8) (field inversion so this won't work)
+original geometry but centred: 26.68 +/- 0.10 (N=2)
+centred with increased spacing between central rings: 25.90 +/- 0.50 (N=8) (why is this less than the one before it? find out where the successes are mostly coming from)
+to summarise this, https://files.catbox.moe/q4srot.png
+
+sipm with opamp, Rf=3.3M: https://files.catbox.moe/y3cp82.png
+that was probably fake
+sipms with led pulser: https://files.catbox.moe/o6xcxy.png, https://files.catbox.moe/kai14z.png, https://files.catbox.moe/0vh8hj.jpg
+
+next steps: learn to trigger on the signals themselves. 
+also why are the sipms different? try different bias voltages to test for manufacturing discrepancies, try different board orientations to test for geometry differences.
+Setup pic without cross: https://files.catbox.moe/7ehrio.jpg
+I believe that 'sipm1' and 'sipm2' are switched around between the led driver tests and the new model with the different feedthroughs/stuff
+
+
+New setup total volume:
+Assuming it's all cylinders, noting down diameters and length (cm)
+11 22
+3 110
+4 15
+1 400
+3.14*0.25*(121*22+9*110+16*15+1*400)=3369cc
+
+sipm overvoltage don't need too high if preamps start working. reduce to 28ish. less noise/crosstalk etc, and the amps mean don't need to worry about gain

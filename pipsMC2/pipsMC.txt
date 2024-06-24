@@ -1,0 +1,231 @@
+2023-11-12
+
+########################
+#
+#
+import numpy as np
+from stl import mesh
+from mpl_toolkits import mplot3d
+from matplotlib import pyplot
+import pickle
+
+#utilities
+
+Epsilon=2e-6 #idk smth small
+#def normalize_each(vectors):
+#    return vectors/np.reshape(np.sqrt(np.diag(np.inner(vectors,vectors))), (len(vectors),1))
+def filter_decays():
+    global decayPos
+    global decayDir
+    global success_indices
+    decayPos=decayPos[success_indices]
+    decayDir=decayDir[success_indices]
+
+def save(filename, *args):
+    # Get global dictionary
+    glob = globals()
+    d = {}
+    for v in args:
+        # Copy over desired values
+        d[v] = glob[v]
+    with open(filename, 'wb') as f:
+        # Put them in the file 
+        pickle.dump(d, f)
+
+def load(filename):
+    # Get global dictionary
+    glob = globals()
+    with open(filename, 'rb') as f:
+        for k, v in pickle.load(f).items():
+            # Set each global variable to the value from the file
+            glob[k] = v
+
+
+
+# Load the STL files...
+my_mesh = mesh.Mesh.from_file('boil-2-pipsMC.stl')
+my_mesh=np.reshape(my_mesh, (len(my_mesh),3,3)) #before this, the whole triangle was in a (9,) array. I am splitting the vertices into their own arrays
+
+xmin, xmax = -68.82, 68.82 #bounding box for volume under consideration
+ymin, ymax = -25.42, 25.42
+zmin, zmax = 0.65, 83.1
+xrange=xmax-xmin
+yrange=ymax-ymin
+zrange=zmax-zmin
+volume=xrange*yrange*zrange
+#print('volume:', xrange*yrange*zrange*1e-3, 'cc') #bounding box is 577 ml
+detectR = 9.77 #radius of circular active region on detector. centered at origin, in xy plane.
+alpha_energy_init=5.5904 #MeV. idk, why not just put it in here
+
+N=int(2e6) #number of decays, something big
+#assert(N<2e4)
+
+#generate random positions and direction rays for each decay.
+#N rows, 3 columns. each row identifies a decay, and there is a column for each coordinate
+decayPos=np.random.uniform([xmin, ymin, zmin], [xmax, ymax, zmax], (N,3))
+decayPos[N-1]=[0,0,0.7] #adding a decay right above the detector so during testing it doesn't all get washed out
+decayPos[N-1]=[9, 0, 1.0]
+decayDir=np.random.normal(0,1,(N,3))
+decayDir[N-1]=[0,0,-1] #making sure that artificial point is guaranteed to hit the detector
+decayPos=decayPos.astype(np.float16) #i don't need too much precision
+decayDir=decayDir.astype(np.float16)
+#decayDir=normalize_each(decayDir) #abandoned because apparently calling a function is expensive
+decayDir=decayDir/np.reshape(np.sqrt(np.einsum('ij...,ij->i...',decayDir,decayDir)), (len(decayDir),1))
+#this einsum thing is to get the elementwise dot product between two lists of vectors (here to get a list of norms of a list of vectors)
+    
+#determine if the generated direction ray falls within the cone of feasibility
+#simple bound on direction vector's x,y,z. x bounds come from joining decay point to (+/-R,0,0), y is similar. z just needs to be negative
+#this overestimates a bit since the bound is actually for the square exscribing the detector circle
+#wait i dont need to do this. just find where the ray intersects the xy plane and see if it falls within the circle, duh
+success_indices=decayDir[:,2]<0
+filter_decays()
+
+#if this is confusing just work it out on pen-paper
+floor_intersections=decayPos - np.divide(np.multiply(decayDir, np.reshape(decayPos[:,2], (len(decayPos),1))), np.reshape(decayDir[:,2], (len(decayDir),1)))
+success_indices=np.einsum('ij...,ij->i...',floor_intersections,floor_intersections)<95.5 #(squared norm <300/pi)
+filter_decays()
+
+#the real fight begins. need to find a ray-casting algorithm
+#the algorithm takes a point (where decay occurred), a direction (), and a triangle (surface of solid object).
+#it returns the intersection of the ray with the triangle (and whether it even intersects)
+#for each decay, iterate over all triangles in the assembly to get a list of intersection points
+#check whether the intersection points are near the detector
+#if any of the intersection points are far away, reject the decay
+#if all intersection points are near the decay (technically there should only be 2 but whatever), then the decay succeeds
+#do this for all decays parallely? use numpy magic to end up with a mask of success_indices that then filters the decays
+#finally find length of decayPos, i.e. how many decays succeeded
+#later get a list of lengths between successful decay points and their intersection points with the detector, to put in SRIM later
+
+successes=[]
+
+for i in range(len(decayPos)):
+    O=np.tile(decayPos[i], (len(my_mesh),1))
+    D=np.tile(decayDir[i], (len(my_mesh),1))
+    v1=my_mesh[:,0]
+    v2=my_mesh[:,1]
+    v3=my_mesh[:,2]
+    #first check what triangles are parallel to the ray and exclude them from further calculations
+    normals_dcs_dot=np.einsum('ij...,ij->i...',np.cross(v2-v1, v3-v1),D)
+    mask=np.logical_or(normals_dcs_dot<-Epsilon, normals_dcs_dot>Epsilon)
+    
+    #Moeller-Trumbore
+    MTmatrix=np.array([-D[mask].T, (v2-v1)[mask].T,(v3-v1)[mask].T]).T
+    MTvector=O[mask]-v1[mask]
+    #this gives us intersection of ray with the plane of the triangle:
+    tuv=np.linalg.solve(MTmatrix, MTvector)
+    #now to see if the intersection is actually within the triangle, and exclude if not
+    mask2=np.logical_and.reduce([tuv[:,0]>Epsilon, tuv[:,1]>Epsilon, tuv[:,2]>Epsilon, tuv[:,1]<1+Epsilon, tuv[:,1]+tuv[:,2]<1+Epsilon])
+    #print(mask2.sum())
+    #print(O[mask][mask2][0])
+    #print(tuv[mask2][:,0])
+    #print(D[mask][mask2][0])
+    
+    #funnily enough we probably don't really need the exact intersection point or anything
+    #mask2.sum()/N gives the geometric efficiency, and t will go into SRIM
+    #intersections=np.multiply(np.reshape(tuv[mask2][:,0],(mask2.sum(),1)), D[mask][mask2])+O[mask][mask2]
+    #print(intersections)
+    if mask2.sum()==2: #this decay hits the detector and nothing else, so jot it down somewhere. List of O, D, t
+        successes.append([list(O[mask][mask2][0]), list(D[mask][mask2][0]), tuv[mask2][:,0][0]])
+
+#print(successes)
+
+decayDensity=N/volume
+num_successes=len(successes)
+efficiency=num_successes/N
+#output N, volume, decayDensity, num_successes, efficiency, successes
+save('pipsMC_output', 'N', 'volume', 'decayDensity', 'num_successes', 'efficiency', 'successes')
+#load('pipsMC_output')
+
+'''
+# Create a new plot
+figure = pyplot.figure()
+axes = figure.add_subplot(projection='3d')
+# ...and add the vectors to the plot
+axes.add_collection3d(mplot3d.art3d.Poly3DCollection(my_mesh.vectors))
+# Auto scale to the mesh size
+scale = my_mesh.points.flatten()
+axes.auto_scale_xyz(scale, scale, scale)
+# Show the plot to the screen
+pyplot.show()
+'''
+#
+#
+########################
+
+Detector octagon is 'fill silicon'. active region is a circle in the centre, area 300 mm^2, or radius 9.772 mm.
+Inside the detector Argon is at 700 mb, so density 1.15 kg/m^3 or 0.00115 g/cc
+222-Rn alpha decay is 5.5904 MeV. Range in Argon is 8cm or 3in
+
+detector on xy-plane, assembly extends into +z axis.
+make a cuboidal bounding box around the assembly. volume doesn't matter since we are concerned with radon number density (intensive).
+the detector itself is 0.64 mm thick so take that as minimum z. 
+
+generate a random point and a random direction (homogenous, isotropic). This represents one decay.
+consider a cone from the point to the detector region circle. does the generated direction fall within that cone? if no, this decay fails.
+if yes, use ray-triangle algorithm to find all intersection points between the ray and triangles of the assembly.
+if there are multiple intersection points, it must have hit some solid. the decay fails.
+if there is a single intersection point, double-check if it falls on the detector circle (within some margin of error, the origin isn't centred exactly because autodesk was stupid).
+if it doesn't fall in the detector circle, this decay fails.
+Otherwise, this decay passes.
+
+make a million decays and see how many pass.
+
+for each passing decay, also note down the distance between the decay and the detector, to put into SRIM later.
+
+random idea: barycentric coordinates require n variables (well, n-1 free variables) to specify a point within an n-gon.
+but an n-gon is 2d so a point in it can be specified with 2 numbers. do we have a bijective map between a 2.d set and a (n-1).d set???
+
+my bounding box is 577 cc
+detector cross region under consideration, very rough volume is 237 cc.
+subtracting stuff inside, again very rough, gives cross inside - peek rods - clamp - screw heads - field rings - pips screws - pips screw heads
+237 - 1.5 - 1 - 0  -  5 - 3.5 - 0 = 226
+
+check activity of source to be able to figure out how much radon is expected, and thus how many decays expected over a day, etc.
+Ra226, calibration 2016-10-28, activity 5.123 kBq, something 2000A, something --- (blank) dpm/cm^2
+it has been 669 half-lives, so the activity is now... wait, the source has Ra226, which has a very long half life. let's ignore the diminishing of activity
+then in 24h, 442627200 counts of Rn222 appear. half-life 3.82 days.
+model the increase/decrease of Rn and increase of Po, we get 3.78352×10^7 alpha decays in the whole flowing system.
+measure the volume of the gas flow circuit. what fraction of it did i analyze?
+
+also look up model of pips, technical details like threshold, efficiency, etc. PD300-15-300AM', alpha resolution 14keV FWHM, 500u thickness
+Preamp 
+https://qu.ax/hsOr.pickle
+
+Copper+steel tank: 30*30*65=58500 cc
+Crosses, tees, cylinders above steel tank: (Dia, length) 
+11,42. 8,55. 4,60. 5,18. 10,14. 2,25. 
+Other pipes:
+1,45. 1.5,50. 1,160. 1,40. 4,40. 1,180. 
+Radon source: 4.5,5.5.
+Cylinders are 10050 cc
+So all together 68550 cc
+Volume under my consideration is 0.00346 fraction of whole
+So in there, 130,909 decays happened (Rn->Po).
+Success fraction was like 4k/1mill, so we should see 524 alpha decays in the detector over one whole day. 
+
+field region volume is r=8.2, l=36.25. In 4mil simulation, 55528 decays start in field region.
+Out of 8313 successes, 2988 started in field region, i.e. 5325 successes started outside field region. Whatever, that wasn't really relevant
+So 55528 Po218s stick to PIPS. Half of them release an alpha that is detected by PIPS, i.e. 27764.
+All 55528 218-Po's remain stuck, though, and eventually become 214-Po's, half of which are detected, i.e. same 27764.
+Over the 20+20 min it takes for 214-Po's to show up, the ions could diffuse around and become uniform.
+In that case, 22074 214-Po's would be in the field region when they appear (and immediately decay). Half of them are detected, 11037.
+So 222Ra:218Po:214Po is 8313:27764:38801 is 1:3.4:4.67 is 3:10:14
+Scratch that. The 218-Po's come from those that are stuck to PIPS, and those that were outside field region and happen to aim alpha at PIPS. Roughly 5325 of these latter.
+Similarly, slightly less due to reduced density, we should have additional 5153.
+So new ratio is 8313:33089:43954 = 1:4:5.3
+222-Rn 5.59 MeV, 218-Po 6.1 MeV, 214-Po 7.8 MeV
+SCRATCH THAT the ions diffusing around will not wander into the field region because outside the field rings the field will repel them!
+polonium (or any mass=214 thing) rms velocity at 19 deg C is 184 m/s. average velocity 169 m/s. (+/- 2m/s for Po214 or Po218). mean free path in Ar at 700mb and 19C is 112nm.
+Can polonium ionize argon? nah no way ignore this
+Important: check pipsNRG2 to make sure stuck polonium are as numerous as all decays initialized in field region, not just successes! -Done
+chapman-enskog: polonium diffusivity in argon like 0.9 mm^2/s. so in po214's halflife expect it to drift by 13mm. pretty considerable.
+have to simulate it all. look into perhaps using masks to just not update the stuck stuff's position but otherwise treat it the same?
+(Last edited at: 12023-11-29  02:11 - 5 months ago)
+
+Now: try simulation with reverse drift field so no ions go stick to the pips
+quantify ratio of activities of different species detected
+don't start with a calculated activity level, try to reproduce the given data as closely as possible.
+you may need to make manual adjustments for all the confounding factors that we haven't accounted for or don't know how to calculate, like plating out (may be different for different species for whatever reason), or ion/neutralisation fraction for progeny (not all poloniums are necessarily ions)
+so fix all that by hand if you need to, do whatever to wrangle the simulation into the observed data
+
+run srim at upto 1.2 bar, to make sure the straight line assumption is ok

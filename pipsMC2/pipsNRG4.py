@@ -124,8 +124,8 @@ if True: #further manual finetuning on top of the existing manual adjustments. i
         n_ambientPo214s *= 1.0
         n_plated218 = 0
         n_plated214 = 0
-        # n_monoPo218s *= 0.4
-        # n_monoPo214s *= 0.5
+        n_monoPo218s *= 0.4
+        n_monoPo214s *= 0.5
         t_monoPo210s *= 0.4
         sigma_fudge *= 1.0
     elif conditions == 'transfer':

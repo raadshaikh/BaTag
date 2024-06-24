@@ -1,0 +1,64 @@
+  2023-08-29
+ethernet is robust to signal perturbations, so good choice here where we're going through two feedthroughs and a long distance
+see if there's a poe injector for testing purposes. otherwise, ultimately we want to power it through separate dc source
+pijacki is opening up the camera to examine the insides and make sure it's ok to dissect and rearrange further
+also we need a switch/router to get camera to communicate with computer. see if you can get config page of switch/router. then need to do ip config of camera to be able to see it on computer. then some other protocol for more direct streaming.
+after that, get a circuit schematic and design a new mount (talk with burrill and chen here)
+
+okay, webcam setup more complicated than expected, to be taken care of by pijacki
+i need to make housing based on given dimensions
+
+acetone then EtOH for indium cleaning
+
+
+  2023-09-13
+Diameter of white Teflon wire: 0.34mm, 0.89mm (metal, plastic)
+Diameter of coax cable for level meter (outside): 4.85mm (squeezing it goes down to like 4.3)
+Diameter of coax cable's widest point, like the metal springy connector part: 6.7mm
+2, 2.6, 3.5: round crimp connector
+
+  2023-09-14
+resistor arrangement: https://files.catbox.moe/9n9rir.png
+stps: https://files.catbox.moe/nygr7d.png, https://files.catbox.moe/8xp08l.png
+
+2023-09-19 ryuuko https://files.catbox.moe/042x6q.png
+2023-09-21 assembled camera (only mechanically) https://files.catbox.moe/lmu89r.jpg
+plan for camera:
+Go to Chen's office, while he's making connections, take the bottom flange. Take the housing from Pijacki's office, remove the mesh and screw and old trial desiccant.
+Go downstairs, clean the indium wire from the housing (and maybe clean the bottom plate better too), then sonicate these outer things in EtOH for 20min (?).
+Go upstairs; once Chen is done with electrical connections, go to shop, look for metal replacements for the plastic screws. Ask Burrill to cut long available screws if needed.
+Ask Pijacki to reprogram the camera, test the camera and make sure you know how it'll work once it's downstairs and connected. VLC, browser, etc. Also test LED/heaters/RTD.
+Take finished camera innards and feedthrough and mesh+screw downstairs. Clean these and borosilicate window with EtOH and tissue.
+File down the sub-D connector so it fits completely within the flange hole!!
+Test LED on lab power supply, test RTD and heaters on Mercury, test camera on cleanroom comp. Learn how to remotely control Mercury.
+Secure borosilicate window with soft-baked gasket. Get Argon ready. Go upstairs, get fresh desiccant from Gornea, put it in with mesh. Secure bottom plate with indium wire.
+Pump Argon into camera, put gasket in place, connect connector to feedthrough through hole in bottom plate, screw feedthrough into place.
+Test all functions of cryocamera, with and without dip test cable. Put it in styrofoam box. Get liquid nitrogen ready. Make sure it's kinda working so it's not nuked by the liquid nitrogen later.
+With the testing connections still in place (software and all), fill box with LN2 and see how it works. Make sure Mercury handles the LN2 right. Ask if there's a contingency plan to avoid damage if the heaters don't work.
+Dip it in slowly by lowering it in from a chain. Viewport should cool by 2-3 deg/min. Idea: use kapton tape to secure tip of thermocouple to viewport, to monitor.
+
+"Get Argon ready": 
+"Get LN2 ready":
+
+Camera: admin, xenon136
+
+2023-09-28 gas flow pipe ID 0.17", cryocamera box roughly 50x50x90 mm. outlet delivery pressure 5-8 psi. flush volume 5 times with the gas to replace (x2 margin of error).
+6+6 screws 3/16, 20 screws 5/32. Indium wire 1.6mm.
+https://www.wolframalpha.com/input?i=%280.000225*5*2%29*4*sqrt%2840%29%2F%28pi*%280.004318%29%5E2*sqrt%282*1000*292*8.314*%281-%2815%2F20%29%29%29%29
+
+2023-10-11: I am a worthless incorrigible piece of garbage that should never have been born. Every single thing I have ever done or will ever do is a mistake. I will stop being a burden to this world and to myself when and only when I am dead.
+2023-10-12: Max voltage in Mercury is 20V, which means max power 20 W (since R=20 Ohm put together). But resistors, both now and in previous design, are in total rated for only 50 W (31 V). And the plot in the thesis and labview program suggest a cap on power as 120 W (48 V). ???
+From the plot it seems we probably won't need more than 50 W, but still.
+
+300, 250, 230, 250, 300, done
+or rather, adjust based on image quality on the fly
+Max voltage set in Mercury is 20V, which means max power 20 W (since R=20 Ohm put together). --this is for xenon, not LN2​
+But resistors, both now and in previous design, are in total rated for only 50 W (31 V). --can be overclocked​
+And the plot in the thesis and labview program suggest a cap on power as 120 W (48 V). --bad, set the maximum to 60 W
+
+PID in Mercury for cryocamera: 9, 1.5, 0.4
+Bad image quality. Misty window? focusing on window? presbyopic? dirty container? cheap camera?
+camera failed at 175K. didn't recover even at 250 K. Taken out of LN2, started working again, even when reintroduced to 200K.
+Hoarfrost https://files.catbox.moe/o6u28i.jpg
+decay constant of sebastien's heating 2587s=43min
+mine: 2582s=43min

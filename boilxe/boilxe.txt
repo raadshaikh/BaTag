@@ -1,0 +1,243 @@
+https://tobackgroup.physics.tamu.edu/about/groupculture/
+
+That one really threw me off because I'm german and hearing it made my brain switch to german-mode so I could barely understand what was being said
+
+
+capillary in contact with LXe at bottom, top section is in contact with room-temperature low-pressure xenon. so expect whole capillary to be at like 160-170 K as default.
+strictly speaking 10 W all into the xenon means 20 K higher than needed. so 10 W accounts for wastage of heat. but heating should be as gentler as possible to avoid turbulence.
+capillary is 1 m long in total, about 50 cm of that is down into the cryostat, maybe 20 cm of winding through stuff before it could enter the detector chamber, the last 10 cm or so is where I was applying heat in the simulation
+15 mm between capillary tip and field rings
+
+
+
+1.2 V, 3.1 A, 140° C
+1.4 V, 3.6 A, 175 C
+1.6 V, 4 A, 210 C, that funny smell (O3?) 
+1.7, 4.5, 270, no rust yet
+2, 5, 315, rust! 
+At the end everything other than the capillary (including clamps etc) was about 40-50° C. No damage to PEEK. 
+
+
+
+Two vertical screws that connect ring to flange: need to be shortened by v^v (from 1/2")
+Four horizontal screws that connect clamps to rods: need to be 10mm long
+Two vertical screws to connect rods to ring: 1/2" (check rod tapping) 
+Two horizontal screws to tighten clamps and connect to lugs: 1/2"
+
+
+
+
+
+https://www.dropbox.com/s/s1ccuzp98wtfm1g/PhD-thesis-delaquis-e-version.pdf?dl=0
+
+https://tikolu.net/edit/main90HWTop.cc
+https://tikolu.net/edit/mainHWTop.cmnd
+
+1.4 V, 2.1 A
+
+top clamp high v: 53 deg
+top clamp low v: 60 deg
+
+bottom 60, 45
+
+
+1V, 1A
+top 30 , 35
+bottom 36 , 28
+
+
+total voltage vs voltage drop across the actual capillary section
+0.5, 0.15
+1, 0.35
+1.5, 0.65
+2, 0.95
+2.5, 1.3
+
+Y=0.6X-0.2
+
+total voltage vs current:
+0.5, 0.4
+1, 1.4
+1.5, 2.2
+2, 3.1
+2.5, 4
+
+X=0.55Y+0.3
+
+power dissipated in capillary about 1/3 I^2
+
+https://www.digikey.ca/en/products/detail/amphenol-industrial-operations/97-3106A-18-1S/340919
+https://canada.newark.com/amphenol-industrial/97-3106a-18-1s/circular-connector-plug-18-1s/dp/93F1162
+https://www.mouser.ca/ProductDetail/Amphenol-Industrial/97-3106A181S?qs=2CeEiTs62y2QQAEUg20HmA%3D%3D&_gl=1*1npsn3a*_ga*dW5kZWZpbmVk*_ga_15W4STQT4T*dW5kZWZpbmVk*_ga_1KQLCYKRX3*dW5kZWZpbmVk
+
+https://files.catbox.moe/dk6vq8.png
+
+
+78 x 43 x 22, 14 x 14 mm
+conservatively 68x33x12
+
+https://files.catbox.moe/uw6aql.png
+https://files.catbox.moe/65kch2.png
+https://files.catbox.moe/w7f579.png
+https://files.catbox.moe/5363sp.png
+
+
+
+  2023-07-17
+
+D: brown
+C: white (brown) 
+B: yellow
+A: white (yellow) 
+
+E: purple
+F: white (purple) 
+G: green
+H: white (green)
+
+I: black
+J: red
+
+Cat 6, power over ethernet
+Make ppt summarizing the capillary heater project
+imgur.com/a/6ExrpT4
+
+Temp2 setpoint 27. Overshot to 30, temp1 got to 56.6
+
+Reversed power. 30, 53.
+
+
+
+  2023-07-19
+
+setpoint difference 5: went from (18, 18) to (20, 26)
+
+setting temp1 to 32 when it was at 25 makes it overshoot to 37 (temp2 at 24). Takes a long time to come down.
+
+resistance of heated section is now 0.40147393854 ohm, theoretically
+
+1.0 A, 0.8 V (0.8 W): temp1 gains 0.1 deg, temp2 gains 0.02 deg (every 2.7 seconds). Roughly 0.4 W being delivered to the heated section, and 0.04 W coming from the walls radiantly.
+this means 0.12170 W dissipated in top clamp, 0.02434 W in bottom. Difference is 0.09736 W. Expect 0.12 W in connecting wires. Leaves us with 0.1 W going somewhere, ignore i guess?
+thermal mass of clamp is 3.286, of whole capillary is 2.367. You'd expect clamp-capillary to split 40-60, but the clamp only seems to be getting a fifth.
+
+
+
+  2023-07-24
+
+in air:
+0.6 V, 1.0 A
+clamp to clamp: 0.35 V
+capillary exposed part: 0.08 V, 2 in out of about 6 in. So capillary dV is like 0.25 V. Capillary accounts for 40% of potential drop
+So, 0.84-0.25-0.12-0.02-0.12=0.33 W had been unaccounted for earlier.
+capillary temperature isn't uniform across its length?? 30 at ends to 40 in middle. why?
+What does this even mean? What now?
+
+set temp1 to 32. cap current at 3 A. overshoots to 36. temp2 goes up to 23. capillary goes up to 140. (PID 0.01, 0.01, 0.7) (f.txt)
+increase D to 5. no difference
+increase D to 50. slightly wider oscillations i guess
+D=-10. (i.txt)
+messing with I makes it just keep cooling down
+setpoint 28 now
+ugghhhh the oscillation wont go awayyyyy
+
+  2023-07-26
+resistance between power supply terminal and feedthrough terminal: 0.2 coming and 0.2 going (0.4 ohm total)
+resistance between feedthrough power terminals (i.e. of in-vacuum apparatus): 0.5 ohm
+so resistance total is 0.9, right?
+
+V    A
+0.1,0.1
+0.2,0.2
+0.2,0.4
+0.3,0.5
+0.4,0.6
+0.5,0.7
+0.5,0.8
+0.6,1.0
+0.7,1.1
+0.8,1.3
+0.9,1.5
+1.0,1.6
+1.1,1.8
+1.2,1.9
+1.2,2.0
+1.3,2.0
+1.3,2.1
+1.4,2.1
+1.4,2.2
+1.5,2.4
+1.6,2.5
+1.6,2.6
+1.7,2.7
+1.8,2.7
+1.9,2.8
+1.9,3.0
+2.0,3.1
+2.0,3.2
+2.1,3.3
+2.3,3.4
+2.4,3.6
+2.5,3.7
+2.6,3.8
+2.7,3.9
+2.7,4.0
+2.8,4.2
+3.0,4.4
+3.1,4.5
+3.2,4.6
+3.3,4.8
+3.3,4.9
+3.4,5.0
+3.6,5.1
+
+343 C at capillary middle. clamps 110, 40 (and rising). slight browning started near edges.
+
+intercept: -0.08843929588513144
+slope: [0.69660945]. So resistance 0.7 ohm. huh???
+
+(1.3,2.0): 0.16 dV from ring terminal to edge of capillary (i.e. due to clamp and contact resistances). exposed capillary dV was 0.15, so capillary dV total 0.46.
+so resistances are like. ring terminal to capillary 0.08, capillary to capillary 0.23, capillary to ring terminal 0.08. Leaving 0.3 ohms in the feedthrough and connecting wires.
+Capillary accounts for 35% of potential drop
+
+
+  2023-08-16
+at 3 A, temp1 and temp2 settle at 78, 38 deg. capillary about 160. ill raise the max current to keep testing
+PID = 0.02, 0.03, 1
+https://files.catbox.moe/58d5o0.ggb
+https://files.catbox.moe/lamjj7.png
+
+remember to look at possible temperature rise of capillary length beneath clamps when tpc is opened up!!!
+
+
+  2023-08-27
+setpoint, highest temp observed after setting setpoint, temp fluctuation range after clamps reach equilibrium
+25: 35, 24-28
+35: 180, 40-50
+45: 150, 45-60
+55: 155, 70-85
+65: 210, 70-95
+75: 220, 110-150
+85: 240, 150-180
+70: 140, 100-120
+60: 110, 80-90
+50: 80, 55-70
+40: 60, 30-50
+30: 50, 25-35
+20: 20, 20-20
+
+https://files.catbox.moe/ot9rvr.png
+
+current, capillary/top clamp temp (steady state)
+1.0: 36
+1.5: 60
+2.0: 80
+2.5: 110
+3.0: 150
+3.5: 200
+4.0: 235
+4.5: 300
+
+https://tikolu.net/edit/cryocamera
+https://tikolu.net/edit/capacitance
+https://tikolu.net/edit/pipsMC
+https://tikolu.net/edit/scintMC
