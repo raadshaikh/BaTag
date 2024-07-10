@@ -51,7 +51,7 @@ def load(filename):
 
 dt=1 #timestep in seconds
 # timesteps=int(2*60*60/dt)
-timesteps = 9500
+timesteps = 10000
 print('timesteps = ',timesteps)
 
 #geometry

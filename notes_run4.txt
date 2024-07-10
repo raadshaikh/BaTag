@@ -1,0 +1,10 @@
+nogas1			start: 13:50ish, 17:00ish
+10 V on rings, pressure 3/3, 9/8
+source has been open since ~0930
+
+specampX
+changing spectroscopy amplifier time constant
+-0.5usf reduced gain 32->16
+
+cooldown1		start: 17:22
+10 V on rings, prompt cooldown

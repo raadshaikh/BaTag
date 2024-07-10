@@ -72,13 +72,14 @@ manual_adjustments = True
 mono_adjustments=False
 isPlated=True
 shuffle = True
-conditions='deflection'
+conditions='reverse'
+dataset = 'new'
 
 version=6
 dt=1
 # timesteps=int(3*60*60/dt)
-timesteps=9500
-timesteps2=9500 #see following comment.
+timesteps=10000
+timesteps2=10000 #see following comment.
 if manual_adjustments == True:  timesteps=25000 #to make manual adjustments, keep the pool of possible datapoints large to choose from
 if isPlated:    load('pipsMC{}_output_{}_noions_plated'.format(version,timesteps))
 else:   load('pipsMC{}_output_{}_noions'.format(version,timesteps))
@@ -101,7 +102,7 @@ if conditions == 'deflection' or conditions == 'transfer':
     n_Rn222s = int(1*Rn222AiIt[timesteps2]*0.00123*volume/total_volume)
     n_ambientPo218s = int(1*((n_Rn222s/0.00123)*Po218AiIt[timesteps2]/Rn222AiIt[timesteps2])*0.00123)
     n_ambientPo214s = int(1*((n_Rn222s/0.00123)*Po214AiIt[timesteps2]/Rn222AiIt[timesteps2])*0.00123)
-    n_monoPo218s = int(0.5*0.01*n_Rn222s/0.00123) #fielddecays/N = 0.01, and n_Rn222s = N*0.00122
+    n_monoPo218s = 0.8*int(0.5*0.01*n_Rn222s/0.00123) #fielddecays/N = 0.01, and n_Rn222s = N*0.00122. And the 0.8 is due to neutralisation fraction
     n_monoPo214s = int(n_monoPo218s*Po214AiIt[timesteps2]/Po218AiIt[timesteps2])
     t_monoPo210s = timesteps2
 
@@ -111,22 +112,23 @@ if True: #further manual finetuning on top of the existing manual adjustments. i
         n_Rn222s *= 1.0
         n_ambientPo218s *= 1.0
         n_ambientPo214s *= 1.0
-        n_plated218 = 90*0
+        n_plated218 = 50
         n_plated214 = int(n_plated218*Po214AiIt[timesteps2]/Po218AiIt[timesteps2])
-        n_monoPo218s = 140*0
+        n_plated214 += 120
+        n_monoPo218s = 112+90 #t=10000 means 1362 fielddecays means 112 expected mono218s (1st ring distance/total field region is 0.28"/1.67"). t=9500 is like 102
         n_monoPo214s = int(n_monoPo218s*Po214AiIt[timesteps2]/Po218AiIt[timesteps2])
-        n_monoPo214s *= 0.5
-        t_monoPo210s *= 0.0
+        # n_monoPo214s *= 0.5
+        t_monoPo210s *= 1.0
         sigma_fudge *= 1.0
     elif conditions == 'deflection':
         n_Rn222s *= 1.0
         n_ambientPo218s *= 1.0
         n_ambientPo214s *= 1.0
-        n_plated218 = 0
-        n_plated214 = 0
-        n_monoPo218s *= 0.4
-        n_monoPo214s *= 0.5
-        t_monoPo210s *= 0.4
+        n_plated218 = 10
+        n_plated214 = 20
+        n_monoPo218s *= 0.57
+        n_monoPo214s *= 0.57
+        t_monoPo210s *= 1.0
         sigma_fudge *= 1.0
     elif conditions == 'transfer':
         n_Rn222s *= 1.0
@@ -134,12 +136,12 @@ if True: #further manual finetuning on top of the existing manual adjustments. i
         n_ambientPo214s *= 1.0
         n_plated218 = 0
         n_plated214 = 0
-        n_monoPo218s *= 0.55
-        n_monoPo214s *= 0.75
-        t_monoPo210s *= 0.4
+        # n_monoPo218s *= 0.55
+        # n_monoPo214s *= 0.75
+        # t_monoPo210s *= 0.4
         sigma_fudge *= 1.0
 # '''
-n_bins=80
+n_bins=90
 
 n_Rn222s = int(n_Rn222s)
 n_ambientPo218s = int(n_ambientPo218s)
@@ -188,9 +190,9 @@ MC_distances=np.array(successes[:,2], dtype=float)*0.1 #converting mm to cm
 astar=np.loadtxt('AR_apdata.pl.txt') #data table from ASTAR
 energies=astar[:,0]
 dEdxs_AR=astar[:,1]
-if conditions == 'reverse': pressure_detector, pressure_source = 0.9, 1.4
-if conditions == 'deflection': pressure_detector, pressure_source = 0.9, 1.4
-if conditions == 'transfer': pressure_detector, pressure_source = 0.9, 1.4
+if conditions == 'reverse': pressure_detector, pressure_source = 1.125, 1.580
+if conditions == 'deflection': pressure_detector, pressure_source = 1.125, 1.580
+if conditions == 'transfer': pressure_detector, pressure_source = 1.125, 1.580
 densityAr_detector=0.0016448*pressure_detector #g/cc #at 19 deg C
 densityAr_source=0.0016448*pressure_source
 dEdxs_AR=densityAr_detector*dEdxs_AR #normalizing ASTAR stopping powers with density of the medium
@@ -209,7 +211,7 @@ if manual_adjustments == True:
 Rn222Q=5.5904 #MeV
 Po218Q=6.1
 Po214Q=7.8
-Po210Q=5.4
+Po210Q=5.41
 Rn222Q *= (222-4)/222 #changing q-value to alpha particle kinetic energy. not big difference but still
 Po218Q *= (218-4)/218
 Po214Q *= (214-4)/214
@@ -381,12 +383,16 @@ MC_energies_detected=MC_energies_detected[MC_energies_detected>0]
 #loading experimental results
 
 if conditions == 'transfer':
-    expdata = np.loadtxt('transfer3.2_hist.txt')
+    if dataset == 'old':    expdata = np.loadtxt('transfer3.2_hist.txt')
+    elif dataset == 'new':  expdata = np.loadtxt('transferC3.3_hist.txt')
 if conditions == 'reverse':
-    expdata = np.loadtxt('reverse2.2_hist.txt')
+    if dataset == 'old':    expdata = np.loadtxt('reverse2.2_hist.txt')
+    elif dataset == 'new':    expdata = np.loadtxt('reverseC1.3_hist.txt')
 if conditions == 'deflection':
-    expdata = np.loadtxt('deflection1.2_hist.txt')
-calibrator = np.mean(expdata[expdata>160])/15.35 #calibration peak is centred at 170, which from diagram is about 15.3 MeV. so divide by about 11
+    if dataset == 'old':    expdata = np.loadtxt('deflection1.2_hist.txt')
+    elif dataset == 'new':    expdata = np.loadtxt('deflectionC2.3_hist.txt')
+calibration_centre = {'olddeflection':15.3, 'oldreverse':15.3, 'oldtransfer':15.3, 'newdeflection':14.95, 'newreverse':15.10, 'newtransfer':14.60}
+calibrator = np.mean(expdata[expdata>160])/calibration_centre[dataset+conditions] #calibration peak is centred at...
 expdata = expdata/calibrator
 sigma = np.std(expdata[expdata>10]) #finding width of calibration peak to use to convolve simulation results appropriately
 expdata = expdata[expdata<10] #cutting out calibration peak

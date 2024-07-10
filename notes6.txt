@@ -1,0 +1,130 @@
+run at maximum flow rate
+argon base pressure 1212/1208 mbar
+turn on pump, close bypass valve, needle valve fully open
+(takes ~5 minutes for flow to reach steady state)
+source open for two accumulation runs, closed for third run
+
+
+transferE1.1		start: 10:16, 13:05
+100 V on rings, pressure 1714/1105 mbar, 1745/1100
+
+transferE1.2		start: 13:06, 15:49
+100 V on rings, pressure 1745/1100, 1742/1096
+
+transferE1.3		start: 15:50, 18:25
+100 V on rings, pressure 1742/1096, 1736/1091
+
+transferE2.1		start: 09:52, 12:40
+50 V on rings, pressure 1714/1107, 1741/1097
+
+transferE2.2		start: 12:42, 15:22
+50 V on rings, pressure 1741/1097, 1735/1091
+
+transferE2.3            start: 15:23,18:35
+50 V on rings, pressure 1735/1091,1726/1085
+
+transferE3.1		start: 10:05, 12:53
+10 V on rings, pressure 1725/1104, 1743/1096
+
+transferE3.2		start: 12:54, 15:33
+10 V on rings, pressure 1743/1096, 1734/1090
+
+transferE3.3            start: 15:35, 18:04
+10 V on rings, pressure 1734/1090, 1726/1085
+
+transferE4.1		start: 09:45, 12:33
+75 V on rings, pressure 1706/1107, 1736/1094
+
+transferE4.2		start: 12:35, 15:17
+75 V on rings, pressure 1736/11094, 1735/1092
+
+transferE4.3            start: 15:19, 18:03
+75 V on rings, pressure 1735/1092, 1732/1089
+
+transferE5.1		start: 09:56, 12:45
+25 V on rings, pressure 1705/1108, 1741/1096
+
+transferE5.2		start: 12:47, 15:28
+25 V on rings, pressure 1741/1096, 1734/1090
+
+transferE5.3		start: 15:35, 18:08
+25 V on rings, pressure 1734/1090, 1729/1086
+
+transferC1.1.1		start: 09:25, 12:15
+10 V on rings, pressure 1583/1132, 1591/1126
+-repeating low flow 10 V as a check
+
+transferC1.1.2		start: 12:17, 14:55
+10 V on rings, pressure 1591/1126, 1589/1121
+
+transferC1.1.3          start: 14:57,17:38
+10 V on rings, pressure 1578/1123, 1574/1119
+
+transferE6.1		start: 10:06, 12:59
+150 V on rings, pressure 1710/1106, 1741/1096
+
+transferE6.2		start: 13:00, 15:42
+150 V on rings, pressure 1741/1096, 1733/1089
+
+transferE6.3		start: 15:44, 18:20
+150 V on rings, pressure 1732/1089, 1729/1087
+
+transferC1.2.1		start: 09:40, 12:28
+10 V on rings, pressure 1572/1134, 1589/1129
+-repeating low flow 10 V as another check
+
+transferC1.2.2		start: 12:31, 15:16
+10 V on rings, pressure 1589/1129, 1586/1124
+
+transferC1.2.3		start: 15:18, 17:50
+10 V on rings, pressure 1586/1124, 1590/1122
+
+transferC1.3.1		start: 8:13, 11:01
+10 V on rings, pressure 1579/1134, 1583/1128
+
+transferC1.3.2		start: 11:03, 13:41
+10 V on rings, pressure 1583/1128, 1581/1124
+
+transferC1.3.3          start: 13:43, 16:12 
+10 v on rings, pressure 1581/1124, 1577/1120
+
+transferC1.4.1		start: 9:05, 11:50
+10 V on rings, pressure 1574/1135, 1583/1128
+
+transferC1.4.2		start: 11:52, 14:32
+10 V on rings, pressure 1583/1128, 1586/1122
+
+transferC1.4.3          start: 14:34, 17:04
+10 V on rings, pressure 1586/1122, 1584/1119
+-forgot to save pressure data, so it was full buffer by the time I got to it after the long weekend, so it's truncated to the last ~700 seconds
+
+rad7_1			start: 11:55, 12:55
+10 V on rings, pressure 1217/1213, 1216/1212
+-source open, Rad7 valve closed. Going to accumulate for 1 hour, then take a Rad7 reading after closing source valve, while bleeding in argon to keep pressure stable. Then flush, accumulate for 2 hours, take reading, then flush, accumulate for 3 hours, take reading. Will take a couple readings after each accumulation, see how rate goes down with Rad7 drawing from the volume.
+Rad7 	301	92.9	186 
+	302	67.4	184
+
+rad7_2			start: 13:09, 17:09
+10 V on rings, pressure 1215/1212, 1213/1209
+Rad7	401	1530	503	B
+	402	576	355	B
+	403	185	225	B
+
+rad7_3			start: 10:29, 13:29
+10 V on rings, pressure 1213/1209, 1212/1208
+Rad7	501	1400	485	B
+	502	610	363	B
+	503	303	280	B	
+
+rad7_4			start: 13:47, 15:47 
+10 V on rings, pressure 1212/1209, 1211/1208
+Rad7	601	712	365	B
+	602	438	319	B
+	603	101	202	B
+
+source closed 16:00 July 04
+source open 10:01 July 05, bypass closed after pressure 1212/1208
+idea being accumulate lots of activity overnight, run xfer, rev, defl in sequence with same sample, rad7 at very end.
+
+transferF10.1		start: 10:10
+10 V on rings, pressure 1569/1122
