@@ -17,9 +17,9 @@
  =                  Cosine (Y) and Cosine (Z) are transverse motion. =
  =====================================================================
  ==================  CALCULATION   DATA  =============================
-  Calculation Date= 07-05-2024, Time= 19:00:16
+  Calculation Date= 07-11-2024, Time= 22:10:45
   Ion Data: Name,   Mass,   Energy (keV)
-           He    4.003 5600.
+           Po    217.983 100.
   Displacement Energy of Xe = 5.00000 eV
   Latt.Binding Energy of Xe = 1.00000 eV
   SurfaceBind. Energy of Xe = 2.00000 eV
@@ -30,6 +30,6 @@
 =  Col.#5-7: Last location:  X= Depth into target, Y,Z= Transverse axes.     =
 =  Col.#8-10: Cosines of final trajectory.                                   =
 = *** This data file is in the same format as TRIM.DAT (see manual for uses).=
-====== TRIM Calc.= He(5.6 MeV) ==> Layer1(  1 mm) ============================
+====== TRIM Calc.= Po(100 keV) ==> Layer1(  1 um) ============================
  Ion  Atom   Energy        Depth       Lateral-Position        Atom Direction      
  Numb Numb    (eV)          X(A)        Y(A)       Z(A)      Cos(X)  Cos(Y) Cos(Z) 

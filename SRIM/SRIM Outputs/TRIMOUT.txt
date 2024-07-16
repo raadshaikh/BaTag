@@ -7,6 +7,8 @@
 =  Col.#5-7: Last location:  X= Depth into target, Y,Z= Transverse axes.     =
 =  Col.#8-10: Cosines of final trajectory.                                   =
 = *** This data file is in the same format as TRIM.DAT (see manual for uses).=
-====== TRIM Calc.= He(5.6 MeV) ==> Layer1(  1 mm) ============================
+====== TRIM Calc.= Po(100 keV) ==> Layer1(  1 um) ============================
  Ion  Atom   Energy        Depth       Lateral-Position        Atom Direction      
  Numb Numb    (eV)          X(A)        Y(A)       Z(A)      Cos(X)  Cos(Y) Cos(Z) 
+B   49 84 .2074006E+03 -  6288783E-05  .1981E+03 -.4566E+03  -.8504487  .1431098  .5062179
+B   59 84 .1865267E+04 -  3523798E-06  .1207E+03  .2418E+03  -.9361282  .3432527  .0764298
